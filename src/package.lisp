@@ -6,4 +6,5 @@
            #:resolve-token
            #:eval-rpn
            #:process-expression
-           #:*features-list*))
+           #:*features-list*
+           #:*memory*))

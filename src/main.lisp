@@ -45,6 +45,7 @@ Expressions:
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal))
         (interactive (interactive-stream-p *standard-input*)))
+    (setf *memory* 0)
     (when interactive
       (format t "Calculator (type 'quit' to exit)~%")
       (dolist (f *features-list*)

@@ -72,6 +72,15 @@
     (is (= (calc:eval-rpn "1 2 swap -" vars funcs) 1))
     (is (= (calc:eval-rpn "5 drop 3" vars funcs) 3))))
 
+(test eval-new-stack-ops
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "1 2 3 depth" vars funcs) 3))
+    (is (= (calc:eval-rpn "1 2 3 clear 42" vars funcs) 42))
+    (is (= (calc:eval-rpn "10 20 0 pick" vars funcs) 10))
+    (is (= (calc:eval-rpn "10 20 1 pick" vars funcs) 20))
+    (is (= (calc:eval-rpn "1 2 tuck" vars funcs) 2))))
+
 (test eval-factorial
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal)))
@@ -100,6 +109,22 @@
         (funcs (make-hash-table :test #'equal)))
     (is (= (calc:eval-rpn "5 3 logand" vars funcs) 1))
     (is (= (calc:eval-rpn "5 3 logior" vars funcs) 7))))
+
+;;; Memory tests
+
+(test eval-memory
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (setf calc:*memory* 0)
+    (calc:eval-rpn "10 M+" vars funcs)
+    (is (= calc:*memory* 10))
+    (calc:eval-rpn "5 M+" vars funcs)
+    (is (= calc:*memory* 15))
+    (calc:eval-rpn "3 M-" vars funcs)
+    (is (= calc:*memory* 12))
+    (is (= (calc:eval-rpn "MR" vars funcs) 12))
+    (calc:eval-rpn "MC" vars funcs)
+    (is (= calc:*memory* 0))))
 
 ;;; Processor tests
 
