@@ -156,23 +156,23 @@ fi
 echo ""
 echo "=== Input handling ==="
 TOTAL=$((TOTAL + 1))
-result=$(echo "quit" | "$CALC" 2>&1 | head -1)
-if echo "$result" | grep -q "Calculator"; then
+result=$(echo "quit" | "$CALC" 2>&1)
+if [ -z "$result" ]; then
   PASS=$((PASS + 1))
-  echo "  PASS: quit exits cleanly"
+  echo "  PASS: quit exits cleanly (no output)"
 else
   FAIL=$((FAIL + 1))
-  echo "  FAIL: quit (got='$result')"
+  echo "  FAIL: quit (expected no output, got='$result')"
 fi
 
 TOTAL=$((TOTAL + 1))
-result=$(echo "" | "$CALC" 2>&1 | head -1)
-if echo "$result" | grep -q "Calculator"; then
+result=$(echo "" | "$CALC" 2>&1)
+if [ -z "$result" ]; then
   PASS=$((PASS + 1))
-  echo "  PASS: empty input shows banner"
+  echo "  PASS: empty input produces no output"
 else
   FAIL=$((FAIL + 1))
-  echo "  FAIL: empty input (got='$result')"
+  echo "  FAIL: empty input (expected no output, got='$result')"
 fi
 
 echo ""
