@@ -1,0 +1,15 @@
+(in-package #:calc)
+
+(defun resolve-token (token vars)
+  (let ((upper (string-upcase token)))
+    (cond
+      ((let ((v (ignore-errors (read-from-string token))))
+         (when (numberp v) v)))
+      ((string= upper "PI") pi)
+      ((string= upper "E") (exp 1))
+      ((string= upper "T") t)
+      ((string= upper "TRUE") t)
+      ((string= upper "NIL") nil)
+      ((string= upper "FALSE") nil)
+      ((gethash token vars))
+      (t nil))))
