@@ -51,7 +51,6 @@ quit
 ```
 calc.asd              ASDF system definition
 calc-tests.asd        Test system
-build.lisp            Quicklisp + asdf:make driver
 Makefile              build / test / clean targets
 src/
   package.lisp        Package definition
@@ -75,7 +74,6 @@ tools:
 - **ASDF system** (`calc.asd`) with `:build-operation "program-op"` and
   `:entry-point`
 - **Separate test system** (`calc-tests.asd`) with `:perform test-op`
-- **build.lisp** that quickloads the system and calls `asdf:make`
 - **Makefile** wrapping SBCL invocations
 - **GitHub Actions** building on Linux (SBCL bullseye container), macOS, and
   Windows, with artifact upload and tag-triggered releases

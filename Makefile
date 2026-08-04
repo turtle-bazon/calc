@@ -3,7 +3,10 @@ LISP ?= sbcl
 .PHONY: build test test-integration test-all clean
 
 build:
-	$(LISP) --non-interactive --load build.lisp
+	$(LISP) --non-interactive \
+	  --eval '(ql:quickload "calc")' \
+	  --eval '(ensure-directories-exist #p"build/calc")' \
+	  --eval '(asdf:make "calc")'
 
 test:
 	$(LISP) --non-interactive \

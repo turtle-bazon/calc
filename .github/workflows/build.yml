@@ -46,7 +46,7 @@ jobs:
 
       - name: Build
         shell: bash
-        run: sbcl --non-interactive --load build.lisp
+        run: make build
 
       - name: Test
         shell: bash
