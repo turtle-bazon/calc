@@ -7,4 +7,5 @@
            #:eval-rpn
            #:process-expression
            #:*features-list*
-           #:*memory*))
+           #:*memory*
+           #:calc-error))

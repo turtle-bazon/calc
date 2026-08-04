@@ -149,6 +149,56 @@
     (is (= (gethash "A" vars) 10))
     (is (= (gethash "B" vars) 20))))
 
+;;; Error handling tests
+
+(test error-division-by-zero
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (signals calc:calc-error (calc:eval-rpn "1 0 /" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "1 0 mod" vars funcs))))
+
+(test error-log-negative
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (signals calc:calc-error (calc:eval-rpn "-1 log" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "-1 log10" vars funcs))))
+
+(test error-sqrt-negative
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (signals calc:calc-error (calc:eval-rpn "-1 sqrt" vars funcs))))
+
+(test error-stack-underflow
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (signals calc:calc-error (calc:eval-rpn "+" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "sin" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "!" vars funcs))))
+
+(test error-pick-out-of-range
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (signals calc:calc-error (calc:eval-rpn "1 5 pick" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "1 -1 pick" vars funcs))))
+
+(test error-memory-empty-stack
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (setf calc:*memory* 0)
+    (signals calc:calc-error (calc:eval-rpn "M+" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "M-" vars funcs))))
+
+(test error-stack-ops-underflow
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (signals calc:calc-error (calc:eval-rpn "dup" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "swap" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "drop" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "over" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "rot" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "nip" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "tuck" vars funcs))))
+
 (defun run-tests ()
   (let ((results (fiveam:run 'calc-suite)))
     (fiveam:explain! results)
