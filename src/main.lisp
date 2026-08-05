@@ -64,11 +64,31 @@ Expressions:
             (format stream "  ~a = ~a~%" (car pair) (cdr pair))))
         (format stream "No variables defined.~%"))))
 
-(defun main ()
+(defun run-file (filename vars funcs)
+  "Execute a .calc script file."
+  (let ((interactive (interactive-stream-p *standard-input*)))
+    (with-open-file (stream filename :direction :input :if-does-not-exist nil)
+      (when stream
+        (loop for line = (read-line stream nil nil)
+              while line do
+                (when interactive
+                  (format t "~a~%" line)
+                  (force-output))
+                (dolist (expr (uiop:split-string line :separator '(#\;)))
+                  (let ((trimmed (string-trim '(#\Space #\Tab) expr)))
+                    (when (> (length trimmed) 0)
+                      (process-expression trimmed vars funcs)))))))))
+
+(defun main (&optional args)
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal))
         (interactive (interactive-stream-p *standard-input*)))
     (setf *memory* 0)
+    ;; Check for file argument
+    (when (and args (> (length args) 0))
+      (let ((filename (first args)))
+        (run-file filename vars funcs)
+        (return-from main)))
     (when interactive
       (format t "Calculator (type 'quit' or 'help' to exit)~%")
       (dolist (f *features-list*)

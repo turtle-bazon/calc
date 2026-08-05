@@ -7,11 +7,12 @@ and GitHub Actions.
 
 ## Features
 
-- Arithmetic: `+ - * / ^ mod min max gcd lcm`
-- Trig / math: `sin cos tan asin acos atan log log10 exp sqrt abs round floor ceil`
+- Arithmetic: `+ - * / ^ mod min max gcd lcm pow`
+- Trig / math: `sin cos tan asin acos atan atan2 log log10 exp sqrt abs round floor ceil hypot`
 - Comparisons: `> < = >= <= !=`
 - Stack ops: `dup swap drop over rot nip clear depth pick tuck`
-- Bitwise / logic: `logand logior logxor and or not bitnot shl shr`
+- Bitwise / logic: `logand logior logxor logeqv and or xor nand nor not bitnot shl shr`
+- Min/Max variants: `min3 max3 clamp` (3-argument versions)
 - Base conversion: `hex bin dec`
 - Factorial: `!`
 - Memory: `M+ M- MR MC` (memory register operations)
@@ -21,7 +22,10 @@ and GitHub Actions.
 - Ternary: `condition true-val false-val ?`
 - Control flow: `if condition then true-val else false-val then`
 - Loops: `begin condition while body repeat` or `begin body condition until`
+- FOR loop: `start end FOR I body NEXT` (inline loop with counter I)
 - Semicolon-separated expressions: `1 2 +; 3 4 +`
+- Script execution: `calc script.calc` (execute .calc files)
+- REPL commands: `help`, `variables`, `quit`
 - Error handling with descriptive messages
 
 ## Build

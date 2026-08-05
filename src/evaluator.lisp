@@ -30,8 +30,13 @@
 
 (defun is-binary-op (s)
   (member (string-upcase s) '("+" "-" "*" "/" "^" "MOD" "MIN" "MAX"
-                              "GCD" "LCM" "LOGAND" "LOGIOR" "LOGXOR"
-                              "AND" "OR" "SHL" "SHR")
+                              "GCD" "LCM" "LOGAND" "LOGIOR" "LOGXOR" "LOGEQV"
+                              "AND" "OR" "XOR" "NAND" "NOR"
+                              "SHL" "SHR" "HYPOT" "ATAN2" "POW")
+          :test #'string=))
+
+(defun is-ternary-op (s)
+  (member (string-upcase s) '("MIN3" "MAX3" "CLAMP")
           :test #'string=))
 
 (defun is-comparison (s)
@@ -151,10 +156,17 @@
     ((string-equal tok "LOGAND") #'logand)
     ((string-equal tok "LOGIOR") #'logior)
     ((string-equal tok "LOGXOR") #'logxor)
+    ((string-equal tok "LOGEQV") (lambda (a b) (lognot (logxor a b))))
     ((string-equal tok "AND") (lambda (a b) (and a b)))
     ((string-equal tok "OR") (lambda (a b) (or a b)))
+    ((string-equal tok "XOR") (lambda (a b) (not (equal a b))))
+    ((string-equal tok "NAND") (lambda (a b) (not (and a b))))
+    ((string-equal tok "NOR") (lambda (a b) (not (or a b))))
     ((string-equal tok "SHL") (lambda (a b) (ash (truncate a) b)))
-    ((string-equal tok "SHR") (lambda (a b) (ash (truncate a) (- b))))))
+    ((string-equal tok "SHR") (lambda (a b) (ash (truncate a) (- b))))
+    ((string-equal tok "HYPOT") (lambda (a b) (sqrt (+ (* a a) (* b b)))))
+    ((string-equal tok "ATAN2") #'atan)
+    ((string-equal tok "POW") #'expt)))
 
 (defun make-comparison-func (tok)
   (cond
@@ -239,6 +251,20 @@
   (cond
     ((is-binary-op tok)
      (values (apply-binary-op (make-binary-func tok) stack) nil))
+    ((is-ternary-op tok)
+     (let ((u (string-upcase tok)))
+       (when (< (length stack) 3)
+         (error 'calc-error :message (format nil "~A requires three values on the stack" tok)))
+       (let ((c (pop stack))
+             (b (pop stack))
+             (a (pop stack)))
+         (values (cons (cond
+                         ((string= u "MIN3") (min a b c))
+                         ((string= u "MAX3") (max a b c))
+                         ((string= u "CLAMP") (max b (min c a)))
+                         (t (error 'calc-error :message (format nil "Unknown ternary op: ~A" tok))))
+                       stack)
+                 nil))))
     ((is-comparison tok)
      (values (apply-binary-op (make-comparison-func tok) stack) nil))
     ((is-unary-func tok)

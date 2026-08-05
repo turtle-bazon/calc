@@ -139,6 +139,35 @@
         (funcs (make-hash-table :test #'equal)))
     (is (= (calc:eval-rpn "1 5 FOR I 2 * NEXT" vars funcs) 10))))
 
+;;; Extended math tests
+
+(test eval-hypot
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "3 4 hypot" vars funcs) 5))))
+
+(test eval-atan2
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (< (abs (- (calc:eval-rpn "1 1 atan2" vars funcs) (/ pi 4))) 0.001))))
+
+(test eval-extended-bitwise
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "5 3 logeqv" vars funcs) -7))
+    (is (eq (calc:eval-rpn "5 3 xor" vars funcs) t))
+    (is (eq (calc:eval-rpn "5 5 nand" vars funcs) nil))
+    (is (eq (calc:eval-rpn "5 5 nor" vars funcs) nil))))
+
+(test eval-min-max3
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "3 1 2 min3" vars funcs) 1))
+    (is (= (calc:eval-rpn "3 1 2 max3" vars funcs) 3))
+    (is (= (calc:eval-rpn "5 1 10 clamp" vars funcs) 5))
+    (is (= (calc:eval-rpn "0 1 10 clamp" vars funcs) 1))
+    (is (= (calc:eval-rpn "15 1 10 clamp" vars funcs) 10))))
+
 ;;; Processor tests
 
 (test process-assignment
