@@ -324,6 +324,34 @@
     ((string-equal tok "BEGIN")
      ;; BEGIN marks start of loop, just continue
      (values stack nil))
+    ((string-equal tok "FOR")
+     ;; FOR loop: start end FOR ... NEXT
+     (when (< (length stack) 2)
+       (error 'calc-error :message "FOR requires start and end values on the stack"))
+     (let ((end-val (pop stack))
+           (start-val (pop stack)))
+       (unless (and (numberp start-val) (numberp end-val))
+         (error 'calc-error :message "FOR bounds must be numbers"))
+       (setf (gethash "I" vars) start-val
+             (gethash "%FOR-END" vars) end-val)
+       (values stack
+               (cons (1+ pos) nil))))  ;; continue with body
+     ((string-equal tok "NEXT")
+     ;; NEXT: increment counter and loop back to FOR
+     (let ((i-val (gethash "I" vars))
+           (end-val (gethash "%FOR-END" vars)))
+       (unless i-val
+         (error 'calc-error :message "NEXT without matching FOR"))
+       (let ((for-pos (find-matching-next tokens pos)))
+         (unless for-pos
+           (error 'calc-error :message "NEXT without matching FOR"))
+           (incf i-val)
+           (setf (gethash "I" vars) i-val)
+           (if (and end-val (<= i-val end-val))
+               (values stack (cons (1+ for-pos) nil))  ;; loop back
+               (progn
+                 (remhash "%FOR-END" vars)
+                 (values stack nil))))))  ;; exit loop
     ((string= tok "?")
      ;; Ternary operator: condition true-value false-value ?
      (when (< (length stack) 3)
@@ -351,6 +379,22 @@
              (decf depth))
             ((and (= depth 0) (string= u "BEGIN"))
              (return-from find-matching-begin i))))))
+    nil))
+
+(defun find-matching-next (tokens pos)
+  "Find matching FOR for a NEXT at position POS."
+  (let ((depth 0)
+        (len (length tokens)))
+    (dotimes (i len)
+      (when (<= i (1- pos))
+        (let ((u (string-upcase (nth i tokens))))
+          (cond
+            ((string= u "NEXT")
+             (incf depth))
+            ((and (> depth 0) (string= u "FOR"))
+             (decf depth))
+            ((and (= depth 0) (string= u "FOR"))
+             (return-from find-matching-next i))))))
     nil))
 
 ;;; Main evaluator

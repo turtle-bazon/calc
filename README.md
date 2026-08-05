@@ -7,18 +7,22 @@ and GitHub Actions.
 
 ## Features
 
-- Arithmetic: `+ - * / ^ mod`
+- Arithmetic: `+ - * / ^ mod min max gcd lcm`
 - Trig / math: `sin cos tan asin acos atan log log10 exp sqrt abs round floor ceil`
 - Comparisons: `> < = >= <= !=`
-- Stack ops: `dup swap drop over rot nip`
+- Stack ops: `dup swap drop over rot nip clear depth pick tuck`
 - Bitwise / logic: `logand logior logxor and or not bitnot shl shr`
 - Base conversion: `hex bin dec`
 - Factorial: `!`
+- Memory: `M+ M- MR MC` (memory register operations)
 - Constants: `PI E TRUE FALSE NIL`
 - Variables: `X = 42`
 - User functions: `defun square(x) x x *`
 - Ternary: `condition true-val false-val ?`
+- Control flow: `if condition then true-val else false-val then`
+- Loops: `begin condition while body repeat` or `begin body condition until`
 - Semicolon-separated expressions: `1 2 +; 3 4 +`
+- Error handling with descriptive messages
 
 ## Build
 
@@ -43,6 +47,21 @@ X = 42
 = 42
 X
 = 42
+10 M+
+= NIL
+MR
+= 10
+MC
+1 2 3 depth
+= 3
+10 20 0 pick
+= 10
+1 if 10 else 20 then
+= 10
+0 if 10 else 20 then
+= 20
+begin 5 1 - dup while dup 0 > repeat
+= 0
 quit
 ```
 

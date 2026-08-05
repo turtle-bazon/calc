@@ -1,16 +1,19 @@
 (in-package #:calc)
 
 (defvar *features-list*
-  '("Features: + - * / ^ !"
+  '("Features: + - * / ^ ! mod min max gcd lcm"
     "          sin cos tan asin acos atan"
     "          log log10 exp sqrt abs"
+    "          round floor ceil"
     "          hex bin dec (base conversion)"
     "          > < = >= <= !="
-    "          dup swap drop over rot nip"
+    "          dup swap drop over rot nip clear depth pick tuck"
     "          and or not bitnot shl shr"
-    "          min max gcd lcm round floor ceil"
-    "          defun (define function)"
-    "          ? (ternary) for (loop)")
+    "          M+ M- MR MC (memory register)"
+    "          ? (ternary)"
+    "          if/then/else (conditional)"
+    "          begin/while/repeat (loop)"
+    "          defun (define function)")
   "List of feature descriptions shown at startup.")
 
 (defun print-version (&optional (stream *standard-output*))
@@ -41,13 +44,33 @@ Expressions:
 "
    stream))
 
+(defun print-commands (&optional (stream *standard-output*))
+  (write-string
+   "Special commands:
+    help             Show this help message
+    variables        List all defined variables
+    quit             Exit the calculator
+
+"
+   stream))
+
+(defun print-variables (vars &optional (stream *standard-output*))
+  (let ((var-list nil))
+    (maphash (lambda (k v) (push (cons k v) var-list)) vars)
+    (if var-list
+        (progn
+          (format stream "Defined variables:~%")
+          (dolist (pair (sort var-list #'string< :key #'car))
+            (format stream "  ~a = ~a~%" (car pair) (cdr pair))))
+        (format stream "No variables defined.~%"))))
+
 (defun main ()
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal))
         (interactive (interactive-stream-p *standard-input*)))
     (setf *memory* 0)
     (when interactive
-      (format t "Calculator (type 'quit' to exit)~%")
+      (format t "Calculator (type 'quit' or 'help' to exit)~%")
       (dolist (f *features-list*)
         (format t "~a~%" f)))
     (loop
@@ -57,6 +80,12 @@ Expressions:
       (let ((input (read-line *standard-input* nil nil)))
         (unless input (return))
         (when (string-equal input "quit") (return))
+        (when (string-equal input "help")
+          (print-commands)
+          (return))
+        (when (string-equal input "variables")
+          (print-variables vars)
+          (return))
         (dolist (expr (uiop:split-string input :separator '(#\;)))
           (process-expression (string-trim '(#\Space #\Tab) expr) vars funcs))))))
 

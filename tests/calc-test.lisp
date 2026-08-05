@@ -126,6 +126,19 @@
     (calc:eval-rpn "MC" vars funcs)
     (is (= calc:*memory* 0))))
 
+;;; FOR loop tests
+
+(test eval-for-loop
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "1 5 FOR I NEXT" vars funcs) 5))
+    (is (= (calc:eval-rpn "0 10 FOR I NEXT" vars funcs) 10))))
+
+(test eval-for-loop-with-body
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "1 5 FOR I 2 * NEXT" vars funcs) 10))))
+
 ;;; Processor tests
 
 (test process-assignment
