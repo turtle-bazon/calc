@@ -1,4 +1,4 @@
-(in-package #:calc)
+(in-package :calc)
 
 ;;; Error condition
 
@@ -48,7 +48,7 @@
 
 (defun is-control-op (s)
   (member (string-upcase s) '("?" "FOR" "IF" "THEN" "ELSE" "ENDIF"
-                              "WHILE" "REPEAT" "UNTIL")
+                              "WHILE" "REPEAT" "UNTIL" "BEGIN")
           :test #'string=))
 
 ;;; Memory
@@ -211,65 +211,160 @@
       (apply #'* (loop for i from 1 to n collect i))
       0))
 
-;;; Control flow
+;;; Control flow: find matching end token
 
-(defun handle-ternary (stack)
-  (if (>= (length stack) 3)
-      (let ((false-val (pop stack))
-            (true-val (pop stack))
-            (condition (pop stack)))
-        (cons (if condition true-val false-val) stack))
-      stack))
-
-(defun handle-for (stack vars funcs)
-  (if (>= (length stack) 3)
-      (let ((func-name (string-upcase (pop stack)))
-            (end-val (pop stack))
-            (start-val (pop stack)))
-        (let ((func (gethash func-name funcs)))
-          (when func
-            (let ((arg-names (getf func :args))
-                  (body (getf func :body)))
-              (loop for i from start-val to end-val do
-                (when arg-names
-                  (setf (gethash (first arg-names) vars) i))
-                (eval-rpn body vars funcs)))))
-        stack)
-      stack))
-
-(defun handle-control (tok stack vars funcs)
-  (cond
-    ((string= tok "?")        (handle-ternary stack))
-    ((string-equal tok "FOR") (handle-for stack vars funcs))
-    (t stack)))
+(defun find-matching (tokens start skip-word end-word)
+  "Find the matching end-word for skip-word starting at position START.
+   Handles nested skip-words. Returns index of end-word or NIL."
+  (let ((depth 0)
+        (len (length tokens))
+        (found-open nil))
+    (dotimes (i len)
+      (when (>= i start)
+        (let ((u (string-upcase (nth i tokens))))
+          (cond
+            ((string= u skip-word)
+             (incf depth)
+             (setf found-open t))
+            ((and found-open (string= u end-word))
+             (decf depth)
+             (when (= depth 0)
+               (return-from find-matching i)))))))
+    nil))
 
 ;;; Token dispatch
 
-(defun dispatch-token (tok stack vars funcs)
+(defun dispatch-token (tok stack vars funcs tokens pos)
+  "Dispatch a single token. For control flow, may return (values new-stack new-pos)."
   (cond
     ((is-binary-op tok)
-     (apply-binary-op (make-binary-func tok) stack))
+     (values (apply-binary-op (make-binary-func tok) stack) nil))
     ((is-comparison tok)
-     (apply-binary-op (make-comparison-func tok) stack))
+     (values (apply-binary-op (make-comparison-func tok) stack) nil))
     ((is-unary-func tok)
-     (apply-unary-op (make-unary-func tok) stack))
+     (values (apply-unary-op (make-unary-func tok) stack) nil))
     ((string= tok "!")
-     (apply-unary-op #'factorial stack))
+     (values (apply-unary-op #'factorial stack) nil))
     ((is-memory-op tok)
-     (handle-memory tok stack))
+     (values (handle-memory tok stack) nil))
     ((is-stack-op tok)
-     (handle-stack tok stack))
-    ((is-control-op tok)
-     (handle-control tok stack vars funcs))
+     (values (handle-stack tok stack) nil))
+    ((string-equal tok "IF")
+     (unless stack
+       (error 'calc-error :message "IF requires a condition on the stack"))
+     (let ((condition (pop stack)))
+       (if condition
+           ;; True: find ELSE or THEN, execute true branch
+           (let ((else-pos (find-matching tokens pos "IF" "ELSE"))
+                 (then-pos (find-matching tokens pos "IF" "THEN")))
+             (unless then-pos
+               (error 'calc-error :message "IF without matching THEN"))
+             (values stack
+                     (if (and else-pos (< else-pos then-pos))
+                         (cons (1+ pos) (1- else-pos))  ;; execute up to ELSE
+                         (cons (1+ pos) (1- then-pos)))))  ;; execute up to THEN
+           ;; False: find ELSE or THEN, skip to it
+           (let ((else-pos (find-matching tokens pos "IF" "ELSE"))
+                 (then-pos (find-matching tokens pos "IF" "THEN")))
+             (unless then-pos
+               (error 'calc-error :message "IF without matching THEN"))
+             (values stack
+                     (if else-pos
+                         (cons (1+ else-pos) (1- then-pos))  ;; skip to ELSE, execute false branch
+                         (cons (1+ then-pos) nil)))))))  ;; no ELSE, skip past THEN
+    ((string-equal tok "ELSE")
+     ;; ELSE: find the enclosing IF, then find matching THEN
+     (let ((if-pos nil))
+       (dotimes (i pos)
+         (when (and (string-equal (nth i tokens) "IF")
+                    (find-matching tokens i "IF" "THEN"))
+           (setf if-pos i)))
+       (unless if-pos
+         (error 'calc-error :message "ELSE without matching IF"))
+       (let ((then-pos (find-matching tokens if-pos "IF" "THEN")))
+         (unless then-pos
+           (error 'calc-error :message "ELSE without matching THEN"))
+         (values stack (cons then-pos nil)))))
+    ((string-equal tok "THEN")
+     ;; THEN marks end of if block, continue after it
+     (values stack nil))
+    ((string-equal tok "WHILE")
+     (unless stack
+       (error 'calc-error :message "WHILE requires a condition on the stack"))
+     (let ((condition (pop stack)))
+       (if condition
+           ;; True: continue with body
+           (values stack nil)
+           ;; False: skip to matching REPEAT
+           (let ((repeat-pos (find-matching tokens (1+ pos) "BEGIN" "REPEAT")))
+             (values stack
+                     (if repeat-pos
+                         (cons (1+ repeat-pos) nil)
+                         (error 'calc-error :message "WHILE without matching REPEAT")))))))
+    ((string-equal tok "REPEAT")
+     ;; REPEAT loops back to matching BEGIN
+     (let ((begin-pos (find-matching-begin tokens pos)))
+       (values stack
+              (if begin-pos
+                  (cons begin-pos nil)
+                  (error 'calc-error :message "REPEAT without matching BEGIN")))))
+    ((string-equal tok "UNTIL")
+     (unless stack
+       (error 'calc-error :message "UNTIL requires a condition on the stack"))
+     (let ((condition (pop stack)))
+       (if condition
+           ;; True: exit loop
+           (values stack nil)
+           ;; False: loop back
+           (let ((begin-pos (find-matching-begin tokens pos)))
+             (values stack
+                    (if begin-pos
+                        (cons begin-pos nil)
+                        (error 'calc-error :message "UNTIL without matching BEGIN")))))))
+    ((string-equal tok "BEGIN")
+     ;; BEGIN marks start of loop, just continue
+     (values stack nil))
+    ((string= tok "?")
+     ;; Ternary operator: condition true-value false-value ?
+     (when (< (length stack) 3)
+       (error 'calc-error :message "? requires three values on the stack"))
+     (let ((false-val (pop stack))
+           (true-val (pop stack))
+           (condition (pop stack)))
+       (values (cons (if condition true-val false-val) stack) nil)))
     ((or (string= tok "(") (string= tok ")"))
-     stack)
+     (values stack nil))
     (t
-     (cons (resolve-token tok vars) stack))))
+     (values (cons (resolve-token tok vars) stack) nil))))
+
+(defun find-matching-begin (tokens pos)
+  "Find matching BEGIN for a REPEAT or UNTIL at position POS."
+  (let ((depth 0)
+        (len (length tokens)))
+    (dotimes (i len)
+      (when (<= i (1- pos))
+        (let ((u (string-upcase (nth i tokens))))
+          (cond
+            ((or (string= u "REPEAT") (string= u "UNTIL") (string= u "WHILE"))
+             (incf depth))
+            ((and (> depth 0) (string= u "BEGIN"))
+             (decf depth))
+            ((and (= depth 0) (string= u "BEGIN"))
+             (return-from find-matching-begin i))))))
+    nil))
 
 ;;; Main evaluator
 
 (defun eval-rpn (expr vars funcs)
-  (let ((stack nil))
-    (dolist (tok (tokenize expr))
-      (setf stack (dispatch-token tok stack vars funcs)))
+  (let ((tokens (tokenize expr))
+        (stack nil)
+        (pos 0))
+    (loop while (< pos (length tokens)) do
+      (let ((tok (nth pos tokens)))
+        (multiple-value-bind (new-stack jump)
+            (dispatch-token tok stack vars funcs tokens pos)
+          (setf stack new-stack)
+          (if jump
+              (setf pos (car jump))
+              (incf pos)))))
     (if stack (car stack) nil)))
