@@ -8,4 +8,5 @@
            #:process-expression
            #:*features-list*
            #:*memory*
+           #:*macros*
            #:calc-error))

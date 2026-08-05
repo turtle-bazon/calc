@@ -168,6 +168,58 @@
     (is (= (calc:eval-rpn "0 1 10 clamp" vars funcs) 1))
     (is (= (calc:eval-rpn "15 1 10 clamp" vars funcs) 10))))
 
+;;; Array tests
+
+(test eval-array-literal
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (equal (calc:eval-rpn "[ 1 2 3 ]" vars funcs) '(1 2 3)))
+    (is (equal (calc:eval-rpn "[ ]" vars funcs) nil))))
+
+(test eval-array-ops
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "[ 1 2 3 ] 0 get" vars funcs) 1))
+    (is (= (calc:eval-rpn "[ 1 2 3 ] 2 get" vars funcs) 3))
+    (is (equal (calc:eval-rpn "[ 1 2 3 ] 1 99 set" vars funcs) '(1 99 3)))
+    (is (= (calc:eval-rpn "[ 1 2 3 ] len" vars funcs) 3))
+    (is (equal (calc:eval-rpn "[ 1 2 ] 3 push" vars funcs) '(1 2 3)))
+    ;; POP returns the popped value, not the array
+    (is (= (calc:eval-rpn "[ 1 2 3 ] pop" vars funcs) 3))))
+
+(test eval-array-append
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (equal (calc:eval-rpn "[ 1 2 ] [ 3 4 ] append" vars funcs) '(1 2 3 4)))))
+
+;;; String tests
+
+(test eval-string-literal
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (string= (calc:eval-rpn "\"hello\"" vars funcs) "hello"))
+    (is (string= (calc:eval-rpn "\"\"" vars funcs) ""))))
+
+(test eval-string-ops
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "\"hello\" strlen" vars funcs) 5))
+    (is (string= (calc:eval-rpn "\"hello\" \" world\" strcat" vars funcs) "hello world"))
+    (is (string= (calc:eval-rpn "\"hello\" 1 3 substr" vars funcs) "ell"))
+    (is (string= (calc:eval-rpn "\"hello\" upper" vars funcs) "HELLO"))
+    (is (string= (calc:eval-rpn "\"HELLO\" lower" vars funcs) "hello"))
+    (is (string= (calc:eval-rpn "\"  hello  \" trim" vars funcs) "hello"))))
+
+;;; Macro tests
+
+(test eval-macro
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (setf (gethash "DOUBLE" calc:*macros*) (list :args '("x") :body "x x +"))
+    (is (= (calc:eval-rpn "5 double" vars funcs) 10))
+    (setf (gethash "SQUARE" calc:*macros*) (list :args '("x") :body "x x *"))
+    (is (= (calc:eval-rpn "4 square" vars funcs) 16))))
+
 ;;; Processor tests
 
 (test process-assignment

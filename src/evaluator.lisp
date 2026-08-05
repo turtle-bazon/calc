@@ -56,6 +56,14 @@
                               "WHILE" "REPEAT" "UNTIL" "BEGIN")
           :test #'string=))
 
+(defun is-array-op (s)
+  (member (string-upcase s) '("GET" "SET" "LEN" "PUSH" "POP" "APPEND")
+          :test #'string=))
+
+(defun is-string-op (s)
+  (member (string-upcase s) '("STRLEN" "STRCAT" "SUBSTR" "UPPER" "LOWER" "TRIM")
+          :test #'string=))
+
 ;;; Memory
 
 (defvar *memory* 0
@@ -129,6 +137,123 @@
        (cons (car stack)
              (cons (second stack)
                    (cons (car stack) (cddr stack)))))
+       (t stack))))
+
+;;; Array operations
+
+(defun handle-array (tok stack)
+  "Handle array operations."
+  (let ((u (string-upcase tok)))
+    (cond
+      ((string= u "GET")
+       (when (< (length stack) 2)
+         (error 'calc-error :message "GET requires array and index on the stack"))
+       (let ((idx (pop stack))
+             (arr (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "GET requires an array"))
+         (when (or (< idx 0) (>= idx (length arr)))
+           (error 'calc-error :message "GET index out of range"))
+         (cons (nth idx arr) stack)))
+      ((string= u "SET")
+       (when (< (length stack) 3)
+         (error 'calc-error :message "SET requires array, index, and value on the stack"))
+       (let ((val (pop stack))
+             (idx (pop stack))
+             (arr (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "SET requires an array"))
+         (when (or (< idx 0) (>= idx (length arr)))
+           (error 'calc-error :message "SET index out of range"))
+         (cons (append (subseq arr 0 idx) (list val) (subseq arr (1+ idx))) stack)))
+      ((string= u "LEN")
+       (when (< (length stack) 1)
+         (error 'calc-error :message "LEN requires a value on the stack"))
+       (let ((val (pop stack)))
+         (cond
+           ((listp val) (cons (length val) stack))
+           ((stringp val) (cons (length val) stack))
+           (t (error 'calc-error :message "LEN requires an array or string")))))
+      ((string= u "PUSH")
+       (when (< (length stack) 2)
+         (error 'calc-error :message "PUSH requires array and value on the stack"))
+       (let ((val (pop stack))
+             (arr (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "PUSH requires an array"))
+         (cons (append arr (list val)) stack)))
+      ((string= u "POP")
+       (when (< (length stack) 1)
+         (error 'calc-error :message "POP requires an array on the stack"))
+       (let ((arr (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "POP requires an array"))
+         (when (= (length arr) 0)
+           (error 'calc-error :message "POP from empty array"))
+         (cons (car (last arr)) (cons (butlast arr) stack))))
+      ((string= u "APPEND")
+       (when (< (length stack) 2)
+         (error 'calc-error :message "APPEND requires two arrays on the stack"))
+       (let ((b (pop stack))
+             (a (pop stack)))
+         (unless (and (listp a) (listp b))
+           (error 'calc-error :message "APPEND requires two arrays"))
+         (cons (append a b) stack)))
+      (t stack))))
+
+;;; String operations
+
+(defun handle-string (tok stack)
+  "Handle string operations."
+  (let ((u (string-upcase tok)))
+    (cond
+      ((string= u "STRLEN")
+       (when (< (length stack) 1)
+         (error 'calc-error :message "STRLEN requires a string on the stack"))
+       (let ((s (pop stack)))
+         (unless (stringp s)
+           (error 'calc-error :message "STRLEN requires a string"))
+         (cons (length s) stack)))
+      ((string= u "STRCAT")
+       (when (< (length stack) 2)
+         (error 'calc-error :message "STRCAT requires two strings on the stack"))
+       (let ((b (pop stack))
+             (a (pop stack)))
+         (unless (and (stringp a) (stringp b))
+           (error 'calc-error :message "STRCAT requires two strings"))
+         (cons (concatenate 'string a b) stack)))
+      ((string= u "SUBSTR")
+       (when (< (length stack) 3)
+         (error 'calc-error :message "SUBSTR requires string, start, and length"))
+       (let ((len (pop stack))
+             (start (pop stack))
+             (s (pop stack)))
+         (unless (stringp s)
+           (error 'calc-error :message "SUBSTR requires a string"))
+         (when (or (< start 0) (> start (length s)))
+           (error 'calc-error :message "SUBSTR start out of range"))
+         (cons (subseq s start (min (+ start len) (length s))) stack)))
+      ((string= u "UPPER")
+       (when (< (length stack) 1)
+         (error 'calc-error :message "UPPER requires a string on the stack"))
+       (let ((s (pop stack)))
+         (unless (stringp s)
+           (error 'calc-error :message "UPPER requires a string"))
+         (cons (string-upcase s) stack)))
+      ((string= u "LOWER")
+       (when (< (length stack) 1)
+         (error 'calc-error :message "LOWER requires a string on the stack"))
+       (let ((s (pop stack)))
+         (unless (stringp s)
+           (error 'calc-error :message "LOWER requires a string"))
+         (cons (string-downcase s) stack)))
+      ((string= u "TRIM")
+       (when (< (length stack) 1)
+         (error 'calc-error :message "TRIM requires a string on the stack"))
+       (let ((s (pop stack)))
+         (unless (stringp s)
+           (error 'calc-error :message "TRIM requires a string"))
+         (cons (string-trim '(#\Space #\Tab #\Newline) s) stack)))
       (t stack))))
 
 ;;; Function constructors
@@ -275,6 +400,32 @@
      (values (handle-memory tok stack) nil))
     ((is-stack-op tok)
      (values (handle-stack tok stack) nil))
+    ((is-array-op tok)
+     (values (handle-array tok stack) nil))
+    ((is-string-op tok)
+     (values (handle-string tok stack) nil))
+    ;; String literals
+    ((and (> (length tok) 1) (char= (char tok 0) #\") (char= (char tok (1- (length tok))) #\"))
+     (values (cons (subseq tok 1 (1- (length tok))) stack) nil))
+    ;; Array literals [ ... ]
+    ((and (> (length tok) 1) (char= (char tok 0) #\[) (char= (char tok (1- (length tok))) #\]))
+     (let ((inner (subseq tok 1 (1- (length tok)))))
+       (if (> (length inner) 0)
+           ;; Tokenize the inner content and collect all values into a list
+           (let ((arr-tokens (tokenize inner))
+                 (arr-stack nil)
+                 (arr-pos 0))
+             (loop while (< arr-pos (length arr-tokens)) do
+               (let ((at (nth arr-pos arr-tokens)))
+                 (multiple-value-bind (new-stack jump)
+                     (dispatch-token at arr-stack vars funcs arr-tokens arr-pos)
+                   (setf arr-stack new-stack)
+                   (if jump
+                       (setf arr-pos (car jump))
+                       (incf arr-pos)))))
+             ;; arr-stack is in reverse order (last element first), so reverse it
+             (values (cons (reverse arr-stack) stack) nil))
+           (values (cons nil stack) nil))))
     ((string-equal tok "IF")
      (unless stack
        (error 'calc-error :message "IF requires a condition on the stack"))
@@ -425,16 +576,50 @@
 
 ;;; Main evaluator
 
+(defun expand-macro-call (tok stack vars funcs)
+  "Expand and evaluate a macro call. Returns (values new-stack expanded-p)."
+  (let ((macro (gethash (string-upcase tok) *macros*)))
+    (if macro
+        (let ((param-names (getf macro :args))
+              (body (getf macro :body))
+              (num-args (length (getf macro :args))))
+          ;; Pop arguments from stack
+          (when (< (length stack) num-args)
+            (error 'calc-error :message (format nil "~A requires ~A arguments" tok num-args)))
+          (let ((args nil))
+            (loop for j from 1 to num-args do
+              (push (pop stack) args))
+            (setf args (nreverse args))
+            ;; Bind arguments as variables and evaluate body
+            (let ((local-vars (make-hash-table :test #'equal)))
+              ;; Copy existing vars
+              (maphash (lambda (k v) (setf (gethash k local-vars) v)) vars)
+              ;; Bind macro parameters
+              (loop for param in param-names
+                    for arg in args do
+                      (setf (gethash (string-upcase param) local-vars) arg))
+              (let ((result (eval-rpn body local-vars funcs)))
+                (values (cons result stack) t)))))
+        (values stack nil))))
+
 (defun eval-rpn (expr vars funcs)
   (let ((tokens (tokenize expr))
         (stack nil)
         (pos 0))
     (loop while (< pos (length tokens)) do
       (let ((tok (nth pos tokens)))
-        (multiple-value-bind (new-stack jump)
-            (dispatch-token tok stack vars funcs tokens pos)
-          (setf stack new-stack)
-          (if jump
-              (setf pos (car jump))
-              (incf pos)))))
+        ;; Check if this is a macro call
+        (multiple-value-bind (new-stack expanded-p)
+            (expand-macro-call tok stack vars funcs)
+          (if expanded-p
+              (progn
+                (setf stack new-stack)
+                (incf pos))
+              ;; Not a macro, use normal dispatch
+              (multiple-value-bind (new-stack jump)
+                  (dispatch-token tok stack vars funcs tokens pos)
+                (setf stack new-stack)
+                (if jump
+                    (setf pos (car jump))
+                    (incf pos)))))))
     (if stack (car stack) nil)))

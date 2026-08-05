@@ -1,5 +1,8 @@
 (in-package #:calc)
 
+(defvar *macros* (make-hash-table :test #'equal)
+  "Storage for user-defined macros.")
+
 (defun process-expression (tr vars funcs)
   (when (> (length tr) 0)
     (handler-case
@@ -20,6 +23,27 @@
              (when (and (> (length vn) 0) (every #'alpha-char-p vn))
                (setf (gethash vn vars) r)
                (format t "= ~a~%" r))))
+          ;; defmacro
+          ((let ((pos (search "defmacro " tr :test #'string-equal)))
+             (and pos (= pos 0)))
+           (let* ((parts (uiop:split-string tr :separator '(#\Space #\Tab)))
+                  (name (second parts))
+                  (arglist-start (position #\( tr))
+                  (arglist-end (position #\) tr :start arglist-start))
+                  (body-start (1+ arglist-end))
+                  (args-str (subseq tr (1+ arglist-start) arglist-end))
+                  (parsed-args (when (> (length args-str) 0)
+                                 (mapcar #'string-trim
+                                         (make-list (length (uiop:split-string args-str :separator '(#\, #\Space)))
+                                                    :initial-element '(#\Space #\Tab))
+                                         (uiop:split-string args-str :separator '(#\, #\Space)))))
+                  (args parsed-args)
+                  (body (subseq tr body-start)))
+             (when (and name args)
+               (setf (gethash (string-upcase name) *macros*)
+                     (list :args args :body body))
+               (format t "Defined macro: ~a~%" name))))
+          ;; defun
           ((let ((pos (search "defun " tr :test #'string-equal)))
              (and pos (= pos 0)))
            (let* ((parts (uiop:split-string tr :separator '(#\Space #\Tab)))
@@ -39,6 +63,7 @@
                (setf (gethash (string-upcase name) funcs)
                      (list :args args :body body))
                (format t "Defined function: ~a~%" name))))
+          ;; Function call
           ((let ((func (gethash (string-upcase (first (uiop:split-string tr :separator '(#\Space #\Tab #\()))) funcs)))
              (when func
                (let* ((args-str (subseq tr (1+ (position #\( tr))))
@@ -57,3 +82,32 @@
                (format t "= ~a~%" r))))
       (error (c)
         (format t "Error: ~a~%" c)))))
+
+(defun replace-all (string old new)
+  "Replace all occurrences of OLD with NEW in STRING."
+  (let ((result string)
+        (pos 0))
+    (loop while (< pos (length result)) do
+      (let ((found (search old result :start2 pos)))
+        (if found
+            (progn
+              (setf result (concatenate 'string
+                                       (subseq result 0 found)
+                                       new
+                                       (subseq result (+ found (length old)))))
+              (incf pos (length new)))
+            (return))))
+    result))
+
+(defun expand-macro (name args)
+  "Expand a macro call with the given arguments."
+  (let ((macro (gethash (string-upcase name) *macros*)))
+    (when macro
+      (let ((param-names (getf macro :args))
+            (body (getf macro :body)))
+        ;; Replace parameters in body with actual arguments
+        (let ((result body))
+          (loop for param in param-names
+                for arg in args do
+                  (setf result (replace-all result param arg)))
+          result)))))

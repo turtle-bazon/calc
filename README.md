@@ -16,6 +16,9 @@ and GitHub Actions.
 - Base conversion: `hex bin dec`
 - Factorial: `!`
 - Memory: `M+ M- MR MC` (memory register operations)
+- Arrays: `[ 1 2 3 ]` create, `get set len push pop append` operations
+- Strings: `"hello"` literals, `strlen strcat substr upper lower trim` operations
+- Macros: `defmacro double(x) x x +` (inline expansion)
 - Constants: `PI E TRUE FALSE NIL`
 - Variables: `X = 42`
 - User functions: `defun square(x) x x *`

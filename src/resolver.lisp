@@ -11,5 +11,5 @@
       ((string= upper "TRUE") t)
       ((string= upper "NIL") nil)
       ((string= upper "FALSE") nil)
-      ((gethash token vars))
+      ((gethash upper vars))
       (t nil))))

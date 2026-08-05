@@ -13,6 +13,9 @@
                               (digit-char-p (char cur 1)))
                          (and (> (length cur) 1)
                               (char= (char cur 0) #\.))
+                         (and (> (length cur) 1)
+                              (char= (char cur 0) #\")
+                              (char= (char cur (1- (length cur))) #\"))
                          (string-equal cur "T")
                          (string-equal cur "TRUE")
                          (string-equal cur "NIL")
@@ -21,6 +24,35 @@
       (loop while (< i len) do
         (let ((ch (char expr i)))
           (cond
+            ;; String literals
+            ((char= ch #\")
+             (flush-cur)
+             (let ((start i))
+               (incf i)
+               (loop while (< i len) do
+                 (when (char= (char expr i) #\")
+                   (return))
+                 (when (char= (char expr i) #\\)
+                   (incf i))
+                 (incf i))
+               (when (< i len)
+                 (incf i))
+               (push (subseq expr start i) tokens)
+               (setf last-was-value t)
+               (setf space-seen nil)))
+            ;; Array literals [ ... ]
+            ((char= ch #\[)
+             (flush-cur)
+             (let ((depth 1) (start i))
+               (incf i)
+               (loop while (and (< i len) (> depth 0)) do
+                 (cond
+                   ((char= (char expr i) #\[) (incf depth))
+                   ((char= (char expr i) #\]) (decf depth)))
+                 (incf i))
+               (push (subseq expr start i) tokens)
+               (setf last-was-value t)
+               (setf space-seen nil)))
             ;; Whitespace: flush and mark space seen
             ((or (char= ch #\Space) (char= ch #\Tab) (char= ch #\Newline))
              (flush-cur)
