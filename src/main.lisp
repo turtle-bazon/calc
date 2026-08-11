@@ -1,5 +1,37 @@
 (in-package #:calc)
 
+(defvar *history* nil "List of previous input commands.")
+(defvar *history-file* (merge-pathnames ".calc_history" (user-homedir-pathname))
+  "File to store command history.")
+
+(defun load-history ()
+  "Load command history from file."
+  (when (probe-file *history-file*)
+    (with-open-file (stream *history-file* :direction :input :if-does-not-exist nil)
+      (when stream
+        (setf *history*
+              (loop for line = (read-line stream nil nil)
+                    while line
+                    collect line))))))
+
+(defun save-history ()
+  "Save command history to file."
+  (with-open-file (stream *history-file* :direction :output
+                          :if-exists :supersede :if-does-not-exist :create)
+    (when stream
+      (dolist (line *history*)
+        (format stream "~a~%" line)))))
+
+(defun add-to-history (input)
+  "Add input to history if not empty and not duplicate of last."
+  (when (and (> (length input) 0)
+             (or (null *history*)
+                 (not (string= input (first *history*)))))
+    (push input *history*)
+    ;; Keep only last 1000 commands
+    (when (> (length *history*) 1000)
+      (setf *history* (subseq *history* 0 1000)))))
+
 (defvar *features-list*
   '("Features: + - * / ^ ! mod min max gcd lcm"
     "          sin cos tan asin acos atan"
@@ -84,30 +116,37 @@ Expressions:
         (funcs (make-hash-table :test #'equal))
         (interactive (interactive-stream-p *standard-input*)))
     (setf *memory* 0)
+    ;; Load history
+    (load-history)
     ;; Check for file argument
     (when (and args (> (length args) 0))
       (let ((filename (first args)))
         (run-file filename vars funcs)
+        (save-history)
         (return-from main)))
     (when interactive
       (format t "Calculator (type 'quit' or 'help' to exit)~%")
       (dolist (f *features-list*)
         (format t "~a~%" f)))
-    (loop
-      (when interactive
-        (format t "~%")
-        (force-output))
-      (let ((input (read-line *standard-input* nil nil)))
-        (unless input (return))
-        (when (string-equal input "quit") (return))
-        (when (string-equal input "help")
-          (print-commands)
-          (return))
-        (when (string-equal input "variables")
-          (print-variables vars)
-          (return))
-        (dolist (expr (uiop:split-string input :separator '(#\;)))
-          (process-expression (string-trim '(#\Space #\Tab) expr) vars funcs))))))
+    (unwind-protect
+        (loop
+          (when interactive
+            (format t "~%")
+            (force-output))
+          (let ((input (read-line *standard-input* nil nil)))
+            (unless input (return))
+            (when (string-equal input "quit") (return))
+            (when (string-equal input "help")
+              (print-commands)
+              (return))
+            (when (string-equal input "variables")
+              (print-variables vars)
+              (return))
+            (add-to-history input)
+            (dolist (expr (uiop:split-string input :separator '(#\;)))
+              (process-expression (string-trim '(#\Space #\Tab) expr) vars funcs))))
+      ;; Save history on exit
+      (save-history))))
 
 (defun calc-handler (cmd)
   (declare (ignore cmd))

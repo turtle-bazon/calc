@@ -371,6 +371,51 @@
 
 ;;; Token dispatch
 
+(defun lambda-token-p (tok)
+  "Check if a token is a lambda definition like ( x )."
+  (and (> (length tok) 1)
+       (char= (char tok 0) #\()
+       (char= (char tok (1- (length tok))) (char ")" 0))))
+
+(defun parse-lambda-params (tok)
+  "Parse parameter names from a lambda token like ( x y )."
+  (let ((content (subseq tok 1 (1- (length tok)))))
+    (with-input-from-string (s content)
+      (loop for word = (read s nil nil)
+            while word collect (string-downcase (symbol-name word))))))
+
+(defun find-call-forward (tokens start)
+  "Find the next CALL token starting from position START."
+  (loop for i from start below (length tokens)
+        when (string-equal (nth i tokens) "CALL")
+          return i))
+
+(defun handle-lambda-call (pos tokens stack vars funcs)
+  "Handle CALL token by finding the enclosing lambda and executing it."
+  (let ((lambda-pos nil))
+    (loop for i from (1- pos) downto 0 do
+      (when (lambda-token-p (nth i tokens))
+        (setf lambda-pos i)
+        (return)))
+    (unless lambda-pos
+      (error (quote calc-error) :message "CALL without matching lambda"))
+    (let* ((lambda-tok (nth lambda-pos tokens))
+           (params (parse-lambda-params lambda-tok))
+           (num-args (length params))
+           (body-tokens (subseq tokens (1+ lambda-pos) (- pos num-args))))
+      (when (< (length stack) num-args)
+        (error (quote calc-error) :message (format nil "Lambda requires ~A arguments" num-args)))
+      (let ((args nil))
+        (loop for j from 1 to num-args do
+          (push (pop stack) args))
+        (setf args (nreverse args))
+        (let ((local-vars (make-hash-table :test (quote equal))))
+          (maphash (lambda (k v) (setf (gethash k local-vars) v)) vars)
+          (loop for param in params
+                for arg in args do
+                  (setf (gethash (string-upcase param) local-vars) arg))
+          (let ((result (eval-rpn (format nil "~{~A~^ ~}" body-tokens) local-vars funcs)))
+            (values (cons result stack) nil)))))))
 (defun dispatch-token (tok stack vars funcs tokens pos)
   "Dispatch a single token. For control flow, may return (values new-stack new-pos)."
   (cond
@@ -537,8 +582,22 @@
            (true-val (pop stack))
            (condition (pop stack)))
        (values (cons (if condition true-val false-val) stack) nil)))
-    ((or (string= tok "(") (string= tok ")"))
-     (values stack nil))
+    ((or (string= tok "(") (string= tok ")") (lambda-token-p tok) (string-equal tok "CALL"))
+     (cond
+       ((or (string= tok "(") (string= tok ")"))
+        (values stack nil))
+       ((lambda-token-p tok)
+        ;; Lambda token - skip body tokens
+        (let ((params (parse-lambda-params tok))
+              (call-pos (find-call-forward tokens (1+ pos))))
+          (if call-pos
+              (let ((body-len (- call-pos pos 1 (length params))))
+                ;; Skip body tokens, the loop will process args and CALL normally
+                (values stack (cons (- call-pos (length params)) nil)))
+              (error (quote calc-error) :message "Lambda without matching CALL"))))
+       ((string-equal tok "CALL")
+        ;; CALL - execute lambda
+        (handle-lambda-call pos tokens stack vars funcs))))
     (t
      (values (cons (resolve-token tok vars) stack) nil))))
 

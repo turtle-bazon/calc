@@ -220,6 +220,23 @@
     (setf (gethash "SQUARE" calc:*macros*) (list :args '("x") :body "x x *"))
     (is (= (calc:eval-rpn "4 square" vars funcs) 16))))
 
+;;; Nested array tests
+
+(test eval-nested-arrays
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (equal (calc:eval-rpn "[ [ 1 2 ] [ 3 4 ] ]" vars funcs) '((1 2) (3 4))))
+    (is (equal (calc:eval-rpn "[ [ 1 ] 2 3 ]" vars funcs) '((1) 2 3)))
+    (is (= (calc:eval-rpn "[ [ 1 2 ] ] 0 get 0 get" vars funcs) 1))))
+
+;;; Lambda tests
+
+(test eval-lambda
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "( x ) x x + 5 call" vars funcs) 10))
+    (is (= (calc:eval-rpn "( a b ) a b * 3 4 call" vars funcs) 12))))
+
 ;;; Processor tests
 
 (test process-assignment

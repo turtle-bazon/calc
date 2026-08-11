@@ -1,7 +1,5 @@
 (in-package #:calc)
 
-(defvar *macros* (make-hash-table :test #'equal)
-  "Storage for user-defined macros.")
 
 (defun process-expression (tr vars funcs)
   (when (> (length tr) 0)

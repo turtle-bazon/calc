@@ -91,6 +91,20 @@
              (setf cur (string ch))
              (setf space-seen nil)
              (incf i))
+            ;; Lambda params: ( x ) - collect only the params
+            ((char= ch #\()
+             (flush-cur)
+             (let ((depth 1) (start i))
+               (incf i)
+               ;; Match the closing paren for params
+               (loop while (and (< i len) (> depth 0)) do
+                 (cond
+                   ((char= (char expr i) #\() (incf depth))
+                   ((char= (char expr i) #\)) (decf depth)))
+                 (incf i))
+               (push (subseq expr start i) tokens)
+               (setf last-was-value t)
+               (setf space-seen nil)))
             ;; Operators: + - * / ^ ! ( ) ? = > <
             ((or (char= ch #\+) (char= ch #\-) (char= ch #\*)
                  (char= ch #\/) (char= ch #\^) (char= ch #\!)
