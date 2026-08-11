@@ -19,6 +19,8 @@ and GitHub Actions.
 - Arrays: `[ 1 2 3 ]` create, `get set len push pop append` operations
 - Strings: `"hello"` literals, `strlen strcat substr upper lower trim` operations
 - Macros: `defmacro double(x) x x +` (inline expansion)
+- Lambdas: `( x ) x x +` define anonymous functions, `5 call` invoke
+- Functional ops: `MAP FILTER REDUCE` (apply functions to arrays)
 - Constants: `PI E TRUE FALSE NIL`
 - Variables: `X = 42`
 - User functions: `defun square(x) x x *`
@@ -69,6 +71,10 @@ MC
 = 20
 begin 5 1 - dup while dup 0 > repeat
 = 0
+( x ) x x + 5 call
+= 10
+[ 1 2 3 4 ] "+" 0 REDUCE
+= 10
 quit
 ```
 
@@ -82,7 +88,7 @@ src/
   package.lisp        Package definition
   tokenizer.lisp      Expression tokenizer
   resolver.lisp       Token resolver (numbers, constants, variables)
-  evaluator.lisp      RPN evaluator + stack/comparison/logic ops
+  evaluator.lisp      RPN evaluator + lambdas + functional ops
   processor.lisp      Expression processor (assign, defun, calls)
   main.lisp           Entry point
 tests/
