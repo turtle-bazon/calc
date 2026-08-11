@@ -582,23 +582,21 @@
            (true-val (pop stack))
            (condition (pop stack)))
        (values (cons (if condition true-val false-val) stack) nil)))
-    ((or (string= tok "(") (string= tok ")") (lambda-token-p tok) (string-equal tok "CALL"))
-     (cond
-       ((or (string= tok "(") (string= tok ")"))
-        (values stack nil))
-       ((lambda-token-p tok)
-        ;; Lambda token - skip body tokens
-        (let ((params (parse-lambda-params tok))
-              (call-pos (find-call-forward tokens (1+ pos))))
-          (if call-pos
-              (let ((body-len (- call-pos pos 1 (length params))))
-                ;; Skip body tokens, the loop will process args and CALL normally
-                (values stack (cons (- call-pos (length params)) nil)))
-              (error (quote calc-error) :message "Lambda without matching CALL"))))
-       ((string-equal tok "CALL")
-        ;; CALL - execute lambda
-        (handle-lambda-call pos tokens stack vars funcs))))
-    (t
+    ((or (string= tok "(") (string= tok ")"))
+     (values stack nil))
+    ((lambda-token-p tok)
+       ;; Lambda token - skip body tokens
+       (let ((params (parse-lambda-params tok))
+             (call-pos (find-call-forward tokens (1+ pos))))
+         (if call-pos
+             (let ((body-len (- call-pos pos 1 (length params))))
+               ;; Skip body tokens, the loop will process args and CALL normally
+               (values stack (cons (- call-pos (length params)) nil)))
+             (error (quote calc-error) :message "Lambda without matching CALL"))))
+((string-equal tok "CALL")
+       ;; CALL - execute lambda
+       (handle-lambda-call pos tokens stack vars funcs))
+(t
      (values (cons (resolve-token tok vars) stack) nil))))
 
 (defun find-matching-begin (tokens pos)
