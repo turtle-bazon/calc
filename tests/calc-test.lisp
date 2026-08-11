@@ -146,6 +146,22 @@
         (funcs (make-hash-table :test #'equal)))
     (is (= (calc:eval-rpn "3 4 hypot" vars funcs) 5))))
 
+(test map-array
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (equalp '(0 -1 -2 -3) (calc:eval-rpn "[ 0 1 2 3 ] \"NEG\" MAP" vars funcs)))))
+
+(test filter-array
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (equalp '(0 1 2 3) (calc:eval-rpn "[ 0 1 2 3 ] \"ABS\" FILTER" vars funcs)))
+    (is (equalp '(1 2 3) (calc:eval-rpn "[ 1 2 3 ] \"ABS\" FILTER" vars funcs)))))
+
+(test reduce-array
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= 10 (calc:eval-rpn "[ 1 2 3 4 ] \"+\" 0 REDUCE" vars funcs)))
+    (is (= 24 (calc:eval-rpn "[ 1 2 3 4 ] \"*\" 1 REDUCE" vars funcs)))))
 (test eval-atan2
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal)))
@@ -309,6 +325,8 @@
     (signals calc:calc-error (calc:eval-rpn "rot" vars funcs))
     (signals calc:calc-error (calc:eval-rpn "nip" vars funcs))
     (signals calc:calc-error (calc:eval-rpn "tuck" vars funcs))))
+
+
 
 (defun run-tests ()
   (let ((results (fiveam:run 'calc-suite)))

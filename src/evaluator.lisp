@@ -62,7 +62,10 @@
 
 (defun is-string-op (s)
   (member (string-upcase s) '("STRLEN" "STRCAT" "SUBSTR" "UPPER" "LOWER" "TRIM")
+          :test #'string=))(defun is-func-op (s)
+  (member (string-upcase s) '("MAP" "FILTER" "REDUCE")
           :test #'string=))
+
 
 ;;; Memory
 
@@ -258,6 +261,63 @@
 
 ;;; Function constructors
 
+(defun resolve-func (name)
+  "Resolve a function name to a callable function."
+  (let ((u (string-upcase name)))
+    (cond
+      ((is-unary-func u) (make-unary-func u))
+      ((is-binary-op u) (make-binary-func u))
+      ((is-comparison u) (make-comparison-func u))
+      ((string= u "NOT") (lambda (x) (not x)))
+      ((string= u "ABS") #'abs)
+      ((string= u "NEG") #'-)
+      ((string= u "ROUND") #'round)
+      ((string= u "FLOOR") #'floor)
+      ((string= u "CEIL") #'ceiling)
+      (t (error 'calc-error :message (format nil "Unknown function: ~A" name))))))
+
+(defun handle-func-op (tok stack)
+  "Handle functional operations: MAP, FILTER, REDUCE."
+  (let ((u (string-upcase tok)))
+    (cond
+      ((string= u "MAP")
+       ;; array func MAP -> array
+       (when (< (length stack) 2)
+         (error 'calc-error :message "MAP requires array and function on the stack"))
+       (let ((func-name (pop stack))
+             (arr (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "MAP requires an array"))
+         (unless (stringp func-name)
+           (error 'calc-error :message "MAP requires a function name as string"))
+         (let ((func (resolve-func func-name)))
+           (cons (mapcar func arr) stack))))
+      ((string= u "FILTER")
+       ;; array func FILTER -> array
+       (when (< (length stack) 2)
+         (error 'calc-error :message "FILTER requires array and function on the stack"))
+       (let ((func-name (pop stack))
+             (arr (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "FILTER requires an array"))
+         (unless (stringp func-name)
+           (error 'calc-error :message "FILTER requires a function name as string"))
+         (let ((pred (resolve-func func-name)))
+           (cons (remove-if-not pred arr) stack))))
+      ((string= u "REDUCE")
+       ;; array func init REDUCE -> value
+       (when (< (length stack) 3)
+         (error 'calc-error :message "REDUCE requires array, function, and initial value on the stack"))
+       (let ((init (pop stack))
+             (func-name (pop stack))
+             (arr (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "REDUCE requires an array"))
+         (unless (stringp func-name)
+           (error 'calc-error :message "REDUCE requires a function name as string"))
+         (let ((func (resolve-func func-name)))
+           (cons (reduce func arr :initial-value init) stack))))
+      (t stack))))
 (defun make-binary-func (tok)
   (cond
     ((string= tok "+") #'+)
@@ -448,7 +508,9 @@
     ((is-array-op tok)
      (values (handle-array tok stack) nil))
     ((is-string-op tok)
-     (values (handle-string tok stack) nil))
+     (values (handle-string tok stack) nil))((is-func-op tok)
+     (values (handle-func-op tok stack) nil))
+
     ;; String literals
     ((and (> (length tok) 1) (char= (char tok 0) #\") (char= (char tok (1- (length tok))) #\"))
      (values (cons (subseq tok 1 (1- (length tok))) stack) nil))
