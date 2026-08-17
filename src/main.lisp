@@ -115,7 +115,8 @@ Expressions:
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal))
         (interactive (interactive-stream-p *standard-input*)))
-    (setf *memory* 0)
+    (setf *memory* 0
+          *macros* (make-hash-table :test #'equal))
     ;; Load history
     (load-history)
     ;; Check for file argument

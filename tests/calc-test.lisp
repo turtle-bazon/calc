@@ -128,6 +128,17 @@
     (calc:eval-rpn "MC" vars funcs)
     (is (= calc:*memory* 0))))
 
+(test state-isolation
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    ;; Define a macro
+    (setf (gethash "TESTMACRO" calc:*macros*) (list :args '("x") :body "x x +"))
+    (is (= (calc:eval-rpn "5 testmacro" vars funcs) 10))
+    ;; Simulate new session by resetting macros
+    (setf calc:*macros* (make-hash-table :test #'equal))
+    ;; Macro should not be available (returns nil)
+    (is (null (calc:eval-rpn "5 testmacro" vars funcs)))))
+
 ;;; FOR loop tests
 
 (test eval-for-loop
