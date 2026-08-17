@@ -23,6 +23,7 @@
 
 (defun is-unary-func (s)
   (member (string-upcase s) '("SIN" "COS" "TAN" "ASIN" "ACOS" "ATAN"
+                              "SINH" "COSH" "TANH" "ASINH" "ACOSH" "ATANH"
                               "LOG" "LOG10" "EXP" "SQRT" "ABS" "NEG"
                               "ROUND" "FLOOR" "CEIL" "NOT" "BITNOT"
                               "HEX" "BIN" "DEC"
@@ -368,6 +369,12 @@
       ((string= u "ASIN") #'asin)
       ((string= u "ACOS") #'acos)
       ((string= u "ATAN") #'atan)
+      ((string= u "SINH") #'sinh)
+      ((string= u "COSH") #'cosh)
+      ((string= u "TANH") #'tanh)
+      ((string= u "ASINH") #'asinh)
+      ((string= u "ACOSH") #'acosh)
+      ((string= u "ATANH") #'atanh)
       ((string= u "LOG")
        (lambda (x)
          (when (<= x 0)
