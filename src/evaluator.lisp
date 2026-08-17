@@ -25,7 +25,8 @@
   (member (string-upcase s) '("SIN" "COS" "TAN" "ASIN" "ACOS" "ATAN"
                               "LOG" "LOG10" "EXP" "SQRT" "ABS" "NEG"
                               "ROUND" "FLOOR" "CEIL" "NOT" "BITNOT"
-                              "HEX" "BIN" "DEC")
+                              "HEX" "BIN" "DEC"
+                              "SQUARE" "CUBE" "CUBERT")
           :test #'string=))
 
 (defun is-binary-op (s)
@@ -51,10 +52,6 @@
                               "CLEAR" "DEPTH" "PICK" "TUCK")
           :test #'string=))
 
-(defun is-control-op (s)
-  (member (string-upcase s) '("?" "FOR" "IF" "THEN" "ELSE" "ENDIF"
-                              "WHILE" "REPEAT" "UNTIL" "BEGIN")
-          :test #'string=))
 
 (defun is-array-op (s)
   (member (string-upcase s) '("GET" "SET" "LEN" "PUSH" "POP" "APPEND")
@@ -399,7 +396,14 @@
       ((string= u "DEC") (lambda (x)
                            (if (stringp x)
                                (parse-integer x :junk-allowed t)
-                               x))))))
+                               x)))
+      ((string= u "SQUARE") (lambda (x) (* x x)))
+      ((string= u "CUBE") (lambda (x) (* x x x)))
+      ((string= u "CUBERT")
+       (lambda (x)
+         (when (< x 0)
+           (error 'calc-error :message "CUBERT requires a non-negative argument"))
+         (expt x (/ 1 3)))))))
 
 ;;; Factorial
 

@@ -146,7 +146,13 @@
 (test eval-hypot
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal)))
-    (is (= (calc:eval-rpn "3 4 hypot" vars funcs) 5))))
+    (is (= (calc:eval-rpn "3 4 hypot" vars funcs) 5))))(test eval-square-cube-cubert
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "5 square" vars funcs) 25))
+    (is (= (calc:eval-rpn "3 cube" vars funcs) 27))
+    (is (< (abs (- (calc:eval-rpn "8 cubert" vars funcs) 2.0)) 0.001))
+    (signals calc:calc-error (calc:eval-rpn "-1 cubert" vars funcs))))
 
 (test map-array
   (let ((vars (make-hash-table :test #'equal))
