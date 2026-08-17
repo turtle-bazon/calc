@@ -85,13 +85,15 @@
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal)))
     (is (= (calc:eval-rpn "5 !" vars funcs) 120))
-    (is (= (calc:eval-rpn "0 !" vars funcs) 1))))
+    (is (= (calc:eval-rpn "0 !" vars funcs) 1))
+    (signals calc:calc-error (calc:eval-rpn "-1 !" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "3.5 !" vars funcs))))
 
 (test eval-ternary
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal)))
     (is (= (calc:eval-rpn "1 10 20 ?" vars funcs) 10))
-    (is (= (calc:eval-rpn "0 10 20 ?" vars funcs) 10))))
+    (is (= (calc:eval-rpn "0 10 20 ?" vars funcs) 20))))
 
 (test eval-variables
   (let ((vars (make-hash-table :test #'equal))

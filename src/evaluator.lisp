@@ -344,7 +344,7 @@
     ((string-equal tok "LOGEQV") (lambda (a b) (lognot (logxor a b))))
     ((string-equal tok "AND") (lambda (a b) (and a b)))
     ((string-equal tok "OR") (lambda (a b) (or a b)))
-    ((string-equal tok "XOR") (lambda (a b) (not (equal a b))))
+    ((string-equal tok "XOR") (lambda (a b) (not (eql a b))))
     ((string-equal tok "NAND") (lambda (a b) (not (and a b))))
     ((string-equal tok "NOR") (lambda (a b) (not (or a b))))
     ((string-equal tok "SHL") (lambda (a b) (ash (truncate a) b)))
@@ -404,9 +404,9 @@
 ;;; Factorial
 
 (defun factorial (n)
-  (if (and (integerp n) (>= n 0))
-      (apply #'* (loop for i from 1 to n collect i))
-      0))
+  (unless (and (integerp n) (>= n 0))
+    (error 'calc-error :message (format nil "Factorial requires a non-negative integer, got ~A" n)))
+  (apply #'* (loop for i from 1 to n collect i)))
 
 ;;; Control flow: find matching end token
 
@@ -643,7 +643,11 @@
      (let ((false-val (pop stack))
            (true-val (pop stack))
            (condition (pop stack)))
-       (values (cons (if condition true-val false-val) stack) nil)))
+       (values (cons (if (and (numberp condition) (not (= condition 0)))
+                         true-val
+                         false-val)
+                     stack)
+               nil)))
     ((or (string= tok "(") (string= tok ")"))
      (values stack nil))
     ((lambda-token-p tok)

@@ -35,7 +35,7 @@
 (defvar *features-list*
   '("Features: + - * / ^ ! mod min max gcd lcm"
     "          sin cos tan asin acos atan"
-    "          log log10 exp sqrt abs"
+    "          log log10 exp sqrt abs square cube cubert"
     "          round floor ceil"
     "          hex bin dec (base conversion)"
     "          > < = >= <= !="
