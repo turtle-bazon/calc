@@ -28,14 +28,16 @@
                               "ROUND" "FLOOR" "CEIL" "NOT" "BITNOT"
                               "HEX" "BIN" "DEC"
                               "SQUARE" "CUBE" "CUBERT"
-                              "RAND" "RANDINT")
+                              "RAND" "RANDINT"
+                              "SIGNUM")
           :test #'string=))
 
 (defun is-binary-op (s)
   (member (string-upcase s) '("+" "-" "*" "/" "^" "MOD" "MIN" "MAX"
                               "GCD" "LCM" "LOGAND" "LOGIOR" "LOGXOR" "LOGEQV"
                               "AND" "OR" "XOR" "NAND" "NOR"
-                              "SHL" "SHR" "HYPOT" "ATAN2" "POW")
+                              "SHL" "SHR" "HYPOT" "ATAN2" "POW"
+                              "IDIV")
           :test #'string=))
 
 (defun is-ternary-op (s)
@@ -350,7 +352,12 @@
     ((string-equal tok "SHR") (lambda (a b) (ash (truncate a) (- b))))
     ((string-equal tok "HYPOT") (lambda (a b) (sqrt (+ (* a a) (* b b)))))
     ((string-equal tok "ATAN2") #'atan)
-    ((string-equal tok "POW") #'expt)))
+    ((string-equal tok "POW") #'expt)
+    ((string-equal tok "IDIV")
+     (lambda (a b)
+       (when (= b 0)
+         (error 'calc-error :message "Division by zero (IDIV)"))
+       (truncate a b)))))
 
 (defun make-comparison-func (tok)
   (cond
@@ -361,7 +368,66 @@
     ((string-equal tok "<=") (lambda (a b) (<= a b)))
     ((string-equal tok "!=") (lambda (a b) (not (= a b))))))
 
-(defun make-unary-func (tok) (let ((u (string-upcase tok))) (cond ((string= u "SIN") (function sin)) ((string= u "COS") (function cos)) ((string= u "TAN") (function tan)) ((string= u "ASIN") (function asin)) ((string= u "ACOS") (function acos)) ((string= u "ATAN") (function atan)) ((string= u "SINH") (function sinh)) ((string= u "COSH") (function cosh)) ((string= u "TANH") (function tanh)) ((string= u "ASINH") (function asinh)) ((string= u "ACOSH") (function acosh)) ((string= u "ATANH") (function atanh)) ((string= u "LOG") (lambda (x) (when (<= x 0) (error (quote calc-error) :message "LOG requires a positive argument")) (log x))) ((string= u "LOG10") (lambda (x) (when (<= x 0) (error (quote calc-error) :message "LOG10 requires a positive argument")) (log x 10))) ((string= u "EXP") (function exp)) ((string= u "SQRT") (lambda (x) (when (< x 0) (error (quote calc-error) :message "SQRT requires a non-negative argument")) (sqrt x))) ((string= u "ABS") (function abs)) ((string= u "NEG") (function -)) ((string= u "ROUND") (function round)) ((string= u "FLOOR") (function floor)) ((string= u "CEIL") (function ceiling)) ((string= u "NOT") (lambda (x) (not x))) ((string= u "BITNOT") (lambda (x) (lognot (truncate x)))) ((string= u "HEX") (lambda (x) (format nil "~X" (truncate x)))) ((string= u "BIN") (lambda (x) (format nil "~B" (truncate x)))) ((string= u "DEC") (lambda (x) (if (stringp x) (parse-integer x :junk-allowed t) x))) ((string= u "SQUARE") (lambda (x) (* x x))) ((string= u "CUBE") (lambda (x) (* x x x))) ((string= u "CUBERT") (lambda (x) (when (< x 0) (error (quote calc-error) :message "CUBERT requires a non-negative argument")) (expt x (/ 1 3)))) ((string= u "RAND") (lambda (x) (let ((n (if (and (numberp x) (> x 0)) x 1))) (random (float n))))) ((string= u "RANDINT") (lambda (x) (let ((n (if (and (numberp x) (> x 0)) x 100))) (random (max 1 (truncate n)))))))))
+(defun make-unary-func (tok)
+  (let ((u (string-upcase tok)))
+    (cond
+      ((string= u "SIN") (function sin))
+      ((string= u "COS") (function cos))
+      ((string= u "TAN") (function tan))
+      ((string= u "ASIN") (function asin))
+      ((string= u "ACOS") (function acos))
+      ((string= u "ATAN") (function atan))
+      ((string= u "SINH") (function sinh))
+      ((string= u "COSH") (function cosh))
+      ((string= u "TANH") (function tanh))
+      ((string= u "ASINH") (function asinh))
+      ((string= u "ACOSH") (function acosh))
+      ((string= u "ATANH") (function atanh))
+      ((string= u "LOG")
+       (lambda (x)
+         (when (<= x 0)
+           (error 'calc-error :message "LOG requires a positive argument"))
+         (log x)))
+      ((string= u "LOG10")
+       (lambda (x)
+         (when (<= x 0)
+           (error 'calc-error :message "LOG10 requires a positive argument"))
+         (log x 10)))
+      ((string= u "EXP") (function exp))
+      ((string= u "SQRT")
+       (lambda (x)
+         (when (< x 0)
+           (error 'calc-error :message "SQRT requires a non-negative argument"))
+         (sqrt x)))
+      ((string= u "ABS") (function abs))
+      ((string= u "NEG") (function -))
+      ((string= u "ROUND") (function round))
+      ((string= u "FLOOR") (function floor))
+      ((string= u "CEIL") (function ceiling))
+      ((string= u "NOT") (lambda (x) (not x)))
+      ((string= u "BITNOT") (lambda (x) (lognot (truncate x))))
+      ((string= u "HEX") (lambda (x) (format nil "~X" (truncate x))))
+      ((string= u "BIN") (lambda (x) (format nil "~B" (truncate x))))
+      ((string= u "DEC") (lambda (x)
+                           (if (stringp x)
+                               (parse-integer x :junk-allowed t)
+                               x)))
+      ((string= u "SQUARE") (lambda (x) (* x x)))
+      ((string= u "CUBE") (lambda (x) (* x x x)))
+      ((string= u "CUBERT")
+       (lambda (x)
+         (when (< x 0)
+           (error 'calc-error :message "CUBERT requires a non-negative argument"))
+         (expt x (/ 1 3))))
+      ((string= u "RAND")
+       (lambda (x)
+         (let ((n (if (and (numberp x) (> x 0)) x 1)))
+           (random (float n)))))
+      ((string= u "RANDINT")
+       (lambda (x)
+         (let ((n (if (and (numberp x) (> x 0)) x 100)))
+           (random (max 1 (truncate n))))))
+      ((string= u "SIGNUM") (function signum)))))
 
 ;;; Factorial
 
