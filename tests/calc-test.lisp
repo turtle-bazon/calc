@@ -351,3 +351,17 @@
   (let ((results (fiveam:run 'calc-suite)))
     (fiveam:explain! results)
     (fiveam:results-status results)))
+(test eval-hyperbolic-trig
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (< (abs (calc:eval-rpn "0 sinh" vars funcs)) 0.001))
+    (is (< (abs (- (calc:eval-rpn "0 cosh" vars funcs) 1)) 0.001))
+    (is (< (abs (calc:eval-rpn "0 tanh" vars funcs)) 0.001))
+    (is (< (abs (calc:eval-rpn "0 asinh" vars funcs)) 0.001))
+    (is (< (abs (calc:eval-rpn "1 acosh" vars funcs)) 0.001))
+    (is (< (abs (calc:eval-rpn "0 atanh" vars funcs)) 0.001))))(test eval-stats
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "[ 1 2 3 4 5 ] mean" vars funcs) 3))
+    (is (= (calc:eval-rpn "[ 1 2 3 4 5 ] median" vars funcs) 3))
+    (is (< (abs (- (calc:eval-rpn "[ 2 4 4 4 5 5 7 9 ] stddev" vars funcs) 2.0)) 0.01))))
