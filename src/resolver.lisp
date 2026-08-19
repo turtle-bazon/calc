@@ -1,5 +1,4 @@
-(in-package #:calc)
-(defun resolve-token (token vars)
+(in-package #:calc)(defun resolve-token (token vars)
   (let ((upper (string-upcase token)))
     (cond
       ((let ((v (ignore-errors (read-from-string token))))
@@ -7,6 +6,8 @@
       ((string= upper "PI") pi)
       ((string= upper "E") (exp 1))
       ((string= upper "GOLDEN") (/ (+ 1 (sqrt 5)) 2))
+      ((string= upper "SQRT2") (sqrt 2))
+      ((string= upper "LN2") (log 2))
       ((string= upper "T") t)
       ((string= upper "TRUE") t)
       ((string= upper "NIL") nil)

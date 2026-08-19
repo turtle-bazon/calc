@@ -400,3 +400,9 @@
     (is (= (calc:eval-rpn "[ 1 2 3 4 5 ] count" vars funcs) 5))
     (is (= (calc:eval-rpn "[ 10 ] sum" vars funcs) 10))
     (is (= (calc:eval-rpn "[ 10 ] count" vars funcs) 1))))
+
+(test eval-constants-extra
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (< (abs (- (calc:eval-rpn "SQRT2" vars funcs) (sqrt 2))) 0.0001))
+    (is (< (abs (- (calc:eval-rpn "LN2" vars funcs) (log 2))) 0.0001))))
