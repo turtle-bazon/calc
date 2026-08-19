@@ -378,3 +378,25 @@
     (is (= (calc:eval-rpn "7 2 IDIV" vars funcs) 3))
     (is (= (calc:eval-rpn "100 10 IDIV" vars funcs) 10))
     (is (= (calc:eval-rpn "-7 2 IDIV" vars funcs) -3))))
+
+(test eval-npr
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "5 3 NPR" vars funcs) 60))
+    (is (= (calc:eval-rpn "10 0 NPR" vars funcs) 1))
+    (is (= (calc:eval-rpn "5 5 NPR" vars funcs) 120))))
+
+(test eval-ncr
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "5 3 NCR" vars funcs) 10))
+    (is (= (calc:eval-rpn "10 0 NCR" vars funcs) 1))
+    (is (= (calc:eval-rpn "5 5 NCR" vars funcs) 1))))
+
+(test eval-sum-count
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "[ 1 2 3 4 5 ] sum" vars funcs) 15))
+    (is (= (calc:eval-rpn "[ 1 2 3 4 5 ] count" vars funcs) 5))
+    (is (= (calc:eval-rpn "[ 10 ] sum" vars funcs) 10))
+    (is (= (calc:eval-rpn "[ 10 ] count" vars funcs) 1))))

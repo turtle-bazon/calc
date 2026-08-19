@@ -37,7 +37,7 @@
                               "GCD" "LCM" "LOGAND" "LOGIOR" "LOGXOR" "LOGEQV"
                               "AND" "OR" "XOR" "NAND" "NOR"
                               "SHL" "SHR" "HYPOT" "ATAN2" "POW"
-                              "IDIV")
+                              "IDIV" "NPR" "NCR")
           :test #'string=))
 
 (defun is-ternary-op (s)
@@ -357,7 +357,9 @@
      (lambda (a b)
        (when (= b 0)
          (error 'calc-error :message "Division by zero (IDIV)"))
-       (truncate a b)))))
+       (truncate a b)))
+    ((string-equal tok "NPR") #'npr)
+    ((string-equal tok "NCR") #'ncr)))
 
 (defun make-comparison-func (tok)
   (cond
@@ -777,7 +779,7 @@
                     (incf pos)))))))
     (if stack (car stack) nil)))
 (defun is-stats-op (s)
-  (member (string-upcase s) '("MEAN" "MEDIAN" "STDDEV") :test #'string=))(defun handle-stats (tok stack)
+  (member (string-upcase s) '("MEAN" "MEDIAN" "STDDEV" "SUM" "COUNT") :test #'string=))(defun handle-stats (tok stack)
   (let ((u (string-upcase tok)))
     (cond
       ((string= u "MEAN")
@@ -816,4 +818,35 @@
                 (variance (/ (apply #'+ (mapcar (lambda (x) (expt (- x mean) 2)) arr))
                              (length arr))))
            (cons (sqrt variance) stack))))
+      ((string= u "SUM")
+       (when (< (length stack) 1)
+         (error 'calc-error :message "SUM requires an array on the stack"))
+       (let ((arr (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "SUM requires an array"))
+         (cons (sum-array arr) stack)))
+      ((string= u "COUNT")
+       (when (< (length stack) 1)
+         (error 'calc-error :message "COUNT requires an array on the stack"))
+       (let ((arr (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "COUNT requires an array"))
+         (cons (count-array arr) stack)))
       (t stack))))
+(defun ncr (n r)
+  (unless (and (integerp n) (integerp r) (>= n 0) (>= r 0) (<= r n))
+    (error 'calc-error :message "NCR requires 0 <= r <= n"))
+  (/ (factorial-func n) (* (factorial-func r) (factorial-func (- n r)))))
+
+(defun sum-array (arr)
+  (apply #'+ arr))
+
+(defun count-array (arr)
+  (length arr))
+
+(defun factorial-func (n)
+  (if (<= n 0) 1 (* n (factorial-func (1- n)))))
+(defun npr (n r)
+  (unless (and (integerp n) (integerp r) (>= n 0) (>= r 0) (<= r n))
+    (error 'calc-error :message "NPR requires 0 <= r <= n"))
+  (/ (factorial-func n) (factorial-func (- n r))))
