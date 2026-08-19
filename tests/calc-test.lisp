@@ -406,3 +406,8 @@
         (funcs (make-hash-table :test #'equal)))
     (is (< (abs (- (calc:eval-rpn "SQRT2" vars funcs) (sqrt 2))) 0.0001))
     (is (< (abs (- (calc:eval-rpn "LN2" vars funcs) (log 2))) 0.0001))))
+(test process-defun (let ((vars (make-hash-table :test 'equal)) (funcs (make-hash-table :test 'equal))) (calc:process-expression "defun double(x) x 2 *" vars funcs) (let ((func (gethash "DOUBLE(X)" funcs))) (is (not (null func))) (is (equal (getf func :args) '("x"))) (is (string= (getf func :body) " x 2 *")))))
+(test eval-until-loop (let ((vars (make-hash-table :test 'equal)) (funcs (make-hash-table :test 'equal))) (is (= (calc:eval-rpn "1 begin 2 * dup 16 > until" vars funcs) 32))))
+(test eval-if-else (let ((vars (make-hash-table :test 'equal)) (funcs (make-hash-table :test 'equal))) (is (= (calc:eval-rpn "1 if 10 else 20 then" vars funcs) 10)) (is (= (calc:eval-rpn "0 if 10 else 20 then" vars funcs) 20))))
+(test eval-golden (let ((vars (make-hash-table :test 'equal)) (funcs (make-hash-table :test 'equal))) (is (< (abs (- (calc:eval-rpn "GOLDEN" vars funcs) (/ (+ 1 (sqrt 5)) 2))) 0.0001))))
+(test eval-stats-edge-cases (let ((vars (make-hash-table :test 'equal)) (funcs (make-hash-table :test 'equal))) (is (= (calc:eval-rpn "[ 5 ] mean" vars funcs) 5)) (is (= (calc:eval-rpn "[ 5 ] median" vars funcs) 5)) (is (= (calc:eval-rpn "[ 3 7 ] mean" vars funcs) 5)) (is (= (calc:eval-rpn "[ 3 7 ] median" vars funcs) 5))))
