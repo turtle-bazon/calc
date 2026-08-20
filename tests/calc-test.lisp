@@ -412,3 +412,13 @@
 (test eval-golden (let ((vars (make-hash-table :test 'equal)) (funcs (make-hash-table :test 'equal))) (is (< (abs (- (calc:eval-rpn "GOLDEN" vars funcs) (/ (+ 1 (sqrt 5)) 2))) 0.0001))))
 (test eval-stats-edge-cases (let ((vars (make-hash-table :test 'equal)) (funcs (make-hash-table :test 'equal))) (is (= (calc:eval-rpn "[ 5 ] mean" vars funcs) 5)) (is (= (calc:eval-rpn "[ 5 ] median" vars funcs) 5)) (is (= (calc:eval-rpn "[ 3 7 ] mean" vars funcs) 5)) (is (= (calc:eval-rpn "[ 3 7 ] median" vars funcs) 5))))
 (test eval-semicolon (let ((vars (make-hash-table :test #'equal)) (funcs (make-hash-table :test #'equal))) (dolist (expr '("a = 1 2 +" "b = 3 4 +")) (calc:process-expression expr vars funcs)) (is (= (gethash "a" vars) 3)) (is (= (gethash "b" vars) 7))))
+(test eval-while-false
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (null (calc:eval-rpn "begin 0 while 5 repeat" vars funcs)))))
+
+(test eval-until-true
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "1 begin 1 until" vars funcs) 1))
+    (is (= (calc:eval-rpn "0 begin 1 until" vars funcs) 0))))
