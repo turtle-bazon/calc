@@ -7,27 +7,33 @@ and GitHub Actions.
 
 ## Features
 
-- Arithmetic: `+ - * / ^ mod min max gcd lcm pow`
+- Arithmetic: `+ - * / ^ mod min max gcd lcm pow idiv`
 - Trig / math: `sin cos tan asin acos atan atan2 log log10 exp sqrt abs round floor ceil hypot`
+- Hyperbolic trig: `sinh cosh tanh asinh acosh atanh`
 - Comparisons: `> < = >= <= !=`
 - Stack ops: `dup swap drop over rot nip clear depth pick tuck`
 - Bitwise / logic: `logand logior logxor logeqv and or xor nand nor not bitnot shl shr`
 - Min/Max variants: `min3 max3 clamp` (3-argument versions)
 - Base conversion: `hex bin dec`
 - Factorial: `!`
+- Signum: `signum`
+- Combinatorics: `npr ncr` (permutations/combinations)
 - Memory: `M+ M- MR MC` (memory register operations)
 - Arrays: `[ 1 2 3 ]` create, `get set len push pop append` operations
 - Strings: `"hello"` literals, `strlen strcat substr upper lower trim` operations
 - Macros: `defmacro double(x) x x +` (inline expansion)
 - Lambdas: `( x ) x x +` define anonymous functions, `5 call` invoke
 - Functional ops: `MAP FILTER REDUCE` (apply functions to arrays)
-- Constants: `PI E TRUE FALSE NIL`
+- Constants: `PI E GOLDEN SQRT2 LN2 TRUE FALSE NIL`
+- Random: `rand randint`
 - Variables: `X = 42`
 - User functions: `defun square(x) x x *`
+- Math functions: `square cube cubert`
 - Ternary: `condition true-val false-val ?`
 - Control flow: `if condition then true-val else false-val then`
 - Loops: `begin condition while body repeat` or `begin body condition until`
 - FOR loop: `start end FOR I body NEXT` (inline loop with counter I)
+- Statistics: `mean median stddev sum count` (operate on arrays)
 - Semicolon-separated expressions: `1 2 +; 3 4 +`
 - Script execution: `calc script.calc` (execute .calc files)
 - REPL commands: `help`, `variables`, `quit`
@@ -75,6 +81,20 @@ begin 5 1 - dup while dup 0 > repeat
 = 10
 [ 1 2 3 4 ] "+" 0 REDUCE
 = 10
+[ 10 20 30 ] mean
+= 20
+[ 10 20 30 ] median
+= 20
+5 ncr 3
+= 10
+5 npr 3
+= 60
+GOLDEN
+= 1.618033988749895
+SQRT2
+= 1.4142135623730951
+rand
+= <random 0.0-1.0>
 quit
 ```
 
