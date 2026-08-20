@@ -19,6 +19,10 @@
     (error 'calc-error :message "Stack underflow: not enough arguments"))
   (cons (funcall op (second stack) (car stack)) (cddr stack)))
 
+(defun calc-true-p (val)
+  "Check if a value is truthy in calculator terms (non-nil and non-zero)."
+  (and val (not (eql val 0))))
+
 ;;; Token classifiers
 
 (defun is-unary-func (s)
@@ -569,7 +573,7 @@
      (unless stack
        (error 'calc-error :message "IF requires a condition on the stack"))
      (let ((condition (pop stack)))
-       (if condition
+       (if (calc-true-p condition)
            ;; True: find ELSE or THEN, execute true branch
            (let ((else-pos (find-matching tokens pos "IF" "ELSE"))
                  (then-pos (find-matching tokens pos "IF" "THEN")))
@@ -608,15 +612,18 @@
      (unless stack
        (error 'calc-error :message "WHILE requires a condition on the stack"))
      (let ((condition (pop stack)))
-       (if condition
+       (if (calc-true-p condition)
            ;; True: continue with body
            (values stack nil)
-           ;; False: skip to matching REPEAT
-           (let ((repeat-pos (find-matching tokens (1+ pos) "BEGIN" "REPEAT")))
-             (values stack
-                     (if repeat-pos
-                         (cons (1+ repeat-pos) nil)
-                         (error 'calc-error :message "WHILE without matching REPEAT")))))))
+           ;; False: find enclosing BEGIN, then skip to matching REPEAT
+           (let ((begin-pos (find-matching-begin tokens pos)))
+             (unless begin-pos
+               (error 'calc-error :message "WHILE without matching BEGIN"))
+             (let ((repeat-pos (find-matching tokens begin-pos "BEGIN" "REPEAT")))
+               (values stack
+                       (if repeat-pos
+                           (cons (1+ repeat-pos) nil)
+                           (error 'calc-error :message "WHILE without matching REPEAT"))))))))
     ((string-equal tok "REPEAT")
      ;; REPEAT loops back to matching BEGIN
      (let ((begin-pos (find-matching-begin tokens pos)))
@@ -628,7 +635,7 @@
      (unless stack
        (error 'calc-error :message "UNTIL requires a condition on the stack"))
      (let ((condition (pop stack)))
-       (if condition
+       (if (calc-true-p condition)
            ;; True: exit loop
            (values stack nil)
            ;; False: loop back
