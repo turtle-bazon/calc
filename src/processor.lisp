@@ -50,7 +50,11 @@
           ((let ((pos (search "defun " tr :test #'string-equal)))
              (and pos (= pos 0)))
            (let* ((parts (uiop:split-string tr :separator '(#\Space #\Tab)))
-                  (name (second parts))
+                  (raw-name (second parts))
+                  ;; Strip "(params)" from the name so lookups match calls
+                  (name (if raw-name
+                            (let ((p (position #\( raw-name)))
+                              (if p (subseq raw-name 0 p) raw-name))))
                   (arglist-start (position #\( tr))
                   (arglist-end (position #\) tr :start arglist-start))
                   (body-start (1+ arglist-end))
@@ -78,39 +82,13 @@
                       (arg-names (getf func :args))
                       (body (getf func :body)))
                  (dolist (pair (mapcar #'cons arg-names arg-vals))
-                   (setf (gethash (car pair) vars) (cdr pair)))
+                   (setf (gethash (string-upcase (car pair)) vars) (cdr pair)))
                  (let ((result (eval-rpn body vars funcs)))
-                   (format t "= ~a~%" result))))))
+                   (format t "= ~a~%" result)
+                   t)))))
           (t (let ((r (eval-rpn tr vars funcs)))
                (format t "= ~a~%" r))))
       (error (c)
         (format t "Error: ~a~%" c)))))
 
-(defun replace-all (string old new)
-  "Replace all occurrences of OLD with NEW in STRING."
-  (let ((result string)
-        (pos 0))
-    (loop while (< pos (length result)) do
-      (let ((found (search old result :start2 pos)))
-        (if found
-            (progn
-              (setf result (concatenate 'string
-                                       (subseq result 0 found)
-                                       new
-                                       (subseq result (+ found (length old)))))
-              (incf pos (length new)))
-            (return))))
-    result))
 
-(defun expand-macro (name args)
-  "Expand a macro call with the given arguments."
-  (let ((macro (gethash (string-upcase name) *macros*)))
-    (when macro
-      (let ((param-names (getf macro :args))
-            (body (getf macro :body)))
-        ;; Replace parameters in body with actual arguments
-        (let ((result body))
-          (loop for param in param-names
-                for arg in args do
-                  (setf result (replace-all result param arg)))
-          result)))))

@@ -70,7 +70,8 @@
 
 (defun is-string-op (s)
   (member (string-upcase s) '("STRLEN" "STRCAT" "SUBSTR" "UPPER" "LOWER" "TRIM")
-          :test #'string=))(defun is-func-op (s)
+          :test #'string=))
+(defun is-func-op (s)
   (member (string-upcase s) '("MAP" "FILTER" "REDUCE")
           :test #'string=))
 
@@ -326,12 +327,6 @@
       ((is-unary-func u) (make-unary-func u))
       ((is-binary-op u) (make-binary-func u))
       ((is-comparison u) (make-comparison-func u))
-      ((string= u "NOT") (lambda (x) (not (calc-true-p x))))
-      ((string= u "ABS") #'abs)
-      ((string= u "NEG") #'-)
-      ((string= u "ROUND") #'round)
-      ((string= u "FLOOR") #'floor)
-      ((string= u "CEIL") #'ceiling)
       (t (error 'calc-error :message (format nil "Unknown function: ~A" name))))))
 
 (defun handle-func-op (tok stack)
@@ -752,33 +747,47 @@
      ;; BEGIN marks start of loop, just continue
      (values stack nil))
     ((string-equal tok "FOR")
-     ;; FOR loop: start end FOR ... NEXT
+     ;; FOR loop: start end FOR <var> body NEXT
+     ;; The token after FOR names the loop variable (default I).
+     ;; Loop state lives on a stack so nested FORs do not clash.
      (when (< (length stack) 2)
        (error 'calc-error :message "FOR requires start and end values on the stack"))
      (let ((end-val (pop stack))
            (start-val (pop stack)))
        (unless (and (numberp start-val) (numberp end-val))
          (error 'calc-error :message "FOR bounds must be numbers"))
-       (setf (gethash "I" vars) start-val
-             (gethash "%FOR-END" vars) end-val)
-       (values stack
-               (cons (1+ pos) nil))))  ;; continue with body
+       (let* ((var-tok (and (< (1+ pos) (length tokens))
+                            (nth (1+ pos) tokens)))
+              (var-name (if (and (stringp var-tok)
+                                 (> (length var-tok) 0)
+                                 (alpha-char-p (char var-tok 0)))
+                            (string-upcase var-tok)
+                            "I")))
+         (push (list var-name end-val) (gethash "%FOR-STACK" vars))
+         (setf (gethash var-name vars) start-val)
+         ;; Continue AT the var-name token: dispatching it pushes the
+         ;; current counter value (the classic "FOR I +" idiom).
+         (values stack
+                 (cons (1+ pos) nil)))))  ;; continue with body
     ((string-equal tok "NEXT")
-     ;; NEXT: increment counter and loop back to FOR
-     (let ((i-val (gethash "I" vars))
-           (end-val (gethash "%FOR-END" vars)))
-       (unless i-val
+     ;; NEXT: increment the innermost loop counter; loop back or pop
+     (let ((frame (first (gethash "%FOR-STACK" vars))))
+       (unless frame
          (error 'calc-error :message "NEXT without matching FOR"))
-       (let ((for-pos (find-matching-next tokens pos)))
-         (unless for-pos
-           (error 'calc-error :message "NEXT without matching FOR"))
-         (incf i-val)
-         (setf (gethash "I" vars) i-val)
-         (if (and end-val (<= i-val end-val))
-             (values stack (cons (1+ for-pos) nil))  ;; loop back
-             (progn
-               (remhash "%FOR-END" vars)
-               (values stack nil))))))  ;; exit loop
+       (destructuring-bind (var-name end-val) frame
+         (let ((i-val (gethash var-name vars)))
+           (unless i-val
+             (error 'calc-error :message "NEXT without matching FOR"))
+           (let ((for-pos (find-matching-next tokens pos)))
+             (unless for-pos
+               (error 'calc-error :message "NEXT without matching FOR"))
+             (incf i-val)
+             (setf (gethash var-name vars) i-val)
+             (if (<= i-val end-val)
+                 (values stack (cons (1+ for-pos) nil))  ;; loop back
+                 (progn
+                   (pop (gethash "%FOR-STACK" vars))
+                   (values stack nil))))))))  ;; exit loop
     ((string= tok "?")
      ;; Ternary operator: condition true-value false-value ?
      (when (< (length stack) 3)
@@ -824,20 +833,17 @@
     nil))
 
 (defun find-matching-next (tokens pos)
-  "Find matching FOR for a NEXT at position POS."
-  (let ((depth 0)
-        (len (length tokens)))
-    (dotimes (i len)
-      (when (<= i (1- pos))
-        (let ((u (string-upcase (nth i tokens))))
-          (cond
-            ((string= u "NEXT")
-             (incf depth))
-            ((and (> depth 0) (string= u "FOR"))
-             (decf depth))
-            ((and (= depth 0) (string= u "FOR"))
-             (return-from find-matching-next i))))))
-    nil))
+  "Find the FOR matching the NEXT at position POS.
+Scans backward so the NEAREST unmatched FOR wins (correct for nesting)."
+  (let ((depth 0))
+    (loop for i from (1- pos) downto 0 do
+      (let ((u (string-upcase (nth i tokens))))
+        (cond
+          ((string= u "NEXT") (incf depth))
+          ((string= u "FOR")
+           (if (= depth 0)
+               (return-from find-matching-next i)
+               (decf depth))))))))
 
 ;;; Main evaluator
 
@@ -892,7 +898,8 @@
 (defun is-stats-op (s)
   (member (string-upcase s) '("MEAN" "MEDIAN" "STDDEV" "SUM" "COUNT"
                               "VARIANCE" "RANGE" "MODE")
-          :test #'string=))(defun handle-stats (tok stack)
+          :test #'string=))
+(defun handle-stats (tok stack)
   (let ((u (string-upcase tok)))
     (cond
       ((string= u "MEAN")

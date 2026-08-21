@@ -33,19 +33,26 @@
       (setf *history* (subseq *history* 0 1000)))))
 
 (defvar *features-list*
-  '("Features: + - * / ^ ! mod min max gcd lcm"
-    "          sin cos tan asin acos atan"
-    "          log log10 exp sqrt abs square cube cubert"
+  '("Features: + - * / ^ ! mod min max gcd lcm pow idiv npr ncr"
+    "          sin cos tan asin acos atan atan2 hypot"
+    "          sind cosd tand (degree trig)"
+    "          sinh cosh tanh asinh acosh atanh"
+    "          log log10 exp sqrt abs signum square cube cubert"
     "          round floor ceil"
     "          hex bin dec (base conversion)"
-    "          > < = >= <= !="
+    "          rand randint"
+    "          > < = >= <= != (numbers, strings, arrays)"
     "          dup swap drop over rot nip clear depth pick tuck"
-    "          and or not bitnot shl shr"
+    "          and or xor nand nor not bitnot shl shr logand logior logxor logeqv"
+    "          min3 max3 clamp"
     "          M+ M- MR MC (memory register)"
-    "          ? (ternary)"
-    "          if/then/else (conditional)"
-    "          begin/while/repeat (loop)"
-    "          defun (define function)")
+    "          ? (ternary)  if/then/else  begin/while/until/repeat  FOR/NEXT"
+    "          [ arrays ]: get set len push pop append amin amax sort reverse slice index IN"
+    "          \"strings\": strlen strcat substr upper lower trim; + concat, N * repeat"
+    "          mean median stddev variance range mode sum count"
+    "          MAP FILTER REDUCE with function-name strings"
+    "          lambda ( x ) ... CALL   |   defmacro name(args) body   |   defun name(args) body"
+    "          constants: PI E GOLDEN SQRT2 LN2 TRUE FALSE NIL")
   "List of feature descriptions shown at startup.")
 
 (defun print-version (&optional (stream *standard-output*))
