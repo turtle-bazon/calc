@@ -501,3 +501,25 @@
     (is (eq (calc:eval-rpn "3 [ 1 2 3 ] IN" vars funcs) t))
     (is (null (calc:eval-rpn "9 [ 1 2 3 ] IN" vars funcs)))
     (is (eq (calc:eval-rpn "\"b\" [ \"a\" \"b\" ] IN" vars funcs) t))))
+(test eval-slice-index
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (equal (calc:eval-rpn "[ 1 2 3 4 ] 1 2 SLICE" vars funcs) '(2 3)))
+    (is (equal (calc:eval-rpn "[ 1 2 3 ] 0 5 SLICE" vars funcs) '(1 2 3)))
+    (is (= (calc:eval-rpn "6 [ 5 6 7 ] INDEX" vars funcs) 1))
+    (is (= (calc:eval-rpn "9 [ 5 6 7 ] INDEX" vars funcs) -1))))
+
+(test eval-variance-range-mode
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "[ 2 4 4 4 5 5 7 9 ] VARIANCE" vars funcs) 4))
+    (is (= (calc:eval-rpn "[ 3 1 9 2 ] RANGE" vars funcs) 8))
+    (is (= (calc:eval-rpn "[ 1 2 2 3 2 ] MODE" vars funcs) 2))
+    (is (= (calc:eval-rpn "[ 7 ] MODE" vars funcs) 7))))
+
+(test eval-degree-trig
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (< (abs (- (calc:eval-rpn "30 SIND" vars funcs) 0.5)) 0.0001))
+    (is (< (abs (- (calc:eval-rpn "60 COSD" vars funcs) 0.5)) 0.0001))
+    (is (< (abs (- (calc:eval-rpn "45 TAND" vars funcs) 1)) 0.0001))))

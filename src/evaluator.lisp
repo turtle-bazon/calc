@@ -33,7 +33,8 @@
                               "HEX" "BIN" "DEC"
                               "SQUARE" "CUBE" "CUBERT"
                               "RAND" "RANDINT"
-                              "SIGNUM")
+                              "SIGNUM"
+                              "SIND" "COSD" "TAND")
           :test #'string=))
 
 (defun is-binary-op (s)
@@ -63,7 +64,8 @@
 
 (defun is-array-op (s)
   (member (string-upcase s) '("GET" "SET" "LEN" "PUSH" "POP" "APPEND"
-                              "AMIN" "AMAX" "SORT" "REVERSE")
+                              "AMIN" "AMAX" "SORT" "REVERSE"
+                              "SLICE" "INDEX")
           :test #'string=))
 
 (defun is-string-op (s)
@@ -236,6 +238,28 @@
          (unless (listp arr)
            (error 'calc-error :message "REVERSE requires an array"))
          (cons (reverse arr) stack)))
+      ((string= u "SLICE")
+       (when (< (length stack) 3)
+         (error 'calc-error :message "SLICE requires array, start, and length on the stack"))
+       (let ((len (pop stack))
+             (start (pop stack))
+             (arr (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "SLICE requires an array"))
+         (unless (and (numberp start) (numberp len) (>= start 0) (>= len 0))
+           (error 'calc-error :message "SLICE requires non-negative start and length"))
+         (when (> start (length arr))
+           (error 'calc-error :message "SLICE start out of range"))
+         (cons (subseq arr start (min (+ start len) (length arr))) stack)))
+      ((string= u "INDEX")
+       (when (< (length stack) 2)
+         (error 'calc-error :message "INDEX requires value and array on the stack"))
+       (let ((arr (pop stack))
+             (val (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "INDEX requires an array"))
+         (let ((pos (position val arr :test #'equal)))
+           (cons (if pos pos -1) stack))))
       (t stack))))
 
 ;;; String operations
@@ -502,7 +526,10 @@
        (lambda (x)
          (let ((n (if (and (numberp x) (> x 0)) x 100)))
            (random (max 1 (truncate n))))))
-      ((string= u "SIGNUM") (function signum)))))
+      ((string= u "SIGNUM") (function signum))
+      ((string= u "SIND") (lambda (x) (sin (* x (/ pi 180)))))
+      ((string= u "COSD") (lambda (x) (cos (* x (/ pi 180)))))
+      ((string= u "TAND") (lambda (x) (tan (* x (/ pi 180))))))))
 
 ;;; Factorial
 
@@ -863,7 +890,9 @@
                     (incf pos)))))))
     (if stack (car stack) nil)))
 (defun is-stats-op (s)
-  (member (string-upcase s) '("MEAN" "MEDIAN" "STDDEV" "SUM" "COUNT") :test #'string=))(defun handle-stats (tok stack)
+  (member (string-upcase s) '("MEAN" "MEDIAN" "STDDEV" "SUM" "COUNT"
+                              "VARIANCE" "RANGE" "MODE")
+          :test #'string=))(defun handle-stats (tok stack)
   (let ((u (string-upcase tok)))
     (cond
       ((string= u "MEAN")
@@ -902,6 +931,39 @@
                 (variance (/ (apply #'+ (mapcar (lambda (x) (expt (- x mean) 2)) arr))
                              (length arr))))
            (cons (sqrt variance) stack))))
+      ((string= u "VARIANCE")
+       (when (< (length stack) 1)
+         (error 'calc-error :message "VARIANCE requires an array on the stack"))
+       (let ((arr (pop stack)))
+         (unless (listp arr)
+           (error 'calc-error :message "VARIANCE requires an array"))
+         (when (< (length arr) 2)
+           (error 'calc-error :message "VARIANCE requires at least two elements"))
+         (let* ((mean (/ (apply #'+ arr) (length arr)))
+                (variance (/ (apply #'+ (mapcar (lambda (x) (expt (- x mean) 2)) arr))
+                             (length arr))))
+           (cons variance stack))))
+      ((string= u "RANGE")
+       (when (< (length stack) 1)
+         (error 'calc-error :message "RANGE requires an array on the stack"))
+       (let ((arr (pop stack)))
+         (unless (and (listp arr) arr)
+           (error 'calc-error :message "RANGE requires a non-empty array"))
+         (cons (- (reduce #'max arr) (reduce #'min arr)) stack)))
+      ((string= u "MODE")
+       (when (< (length stack) 1)
+         (error 'calc-error :message "MODE requires an array on the stack"))
+       (let ((arr (pop stack)))
+         (unless (and (listp arr) arr)
+           (error 'calc-error :message "MODE requires a non-empty array"))
+         (let ((sorted (sort (copy-list arr) #'<)))
+           (loop with best = (car sorted)
+                 with best-n = 0
+                 for val in sorted
+                 for n = (count val sorted :test #'equal)
+                 when (> n best-n)
+                   do (setf best val best-n n)
+                 finally (return (cons best stack))))))
       ((string= u "SUM")
        (when (< (length stack) 1)
          (error 'calc-error :message "SUM requires an array on the stack"))

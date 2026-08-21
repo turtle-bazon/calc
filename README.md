@@ -10,6 +10,7 @@ and GitHub Actions.
 - Arithmetic: `+ - * / ^ mod min max gcd lcm pow idiv`
 - Trig / math: `sin cos tan asin acos atan atan2 log log10 exp sqrt abs round floor ceil hypot`
 - Hyperbolic trig: `sinh cosh tanh asinh acosh atanh`
+- Degree trig: `sind cosd tand` (30 sind = 0.5)
 - Comparisons: `> < = >= <= !=` (work on numbers and strings)
 - Stack ops: `dup swap drop over rot nip clear depth pick tuck`
 - Bitwise / logic: `logand logior logxor logeqv and or xor nand nor not bitnot shl shr`
@@ -19,7 +20,7 @@ and GitHub Actions.
 - Signum: `signum`
 - Combinatorics: `npr ncr` (permutations/combinations)
 - Memory: `M+ M- MR MC` (memory register operations)
-- Arrays: `[ 1 2 3 ]` create, `get set len push pop append amin amax sort reverse` operations
+- Arrays: `[ 1 2 3 ]` create, `get set len push pop append amin amax sort reverse slice index` operations
 - Array comparison: `[ 1 2 ] [ 1 2 ] =` (deep equality; ordering by length)
 - Membership: `3 [ 1 2 3 ] IN` → true
 - Strings: `"hello"` literals, `strlen strcat substr upper lower trim` operations
@@ -36,7 +37,7 @@ and GitHub Actions.
 - Control flow: `if condition then true-val else false-val then`
 - Loops: `begin condition while body repeat` or `begin body condition until`
 - FOR loop: `start end FOR I body NEXT` (inline loop with counter I)
-- Statistics: `mean median stddev sum count` (operate on arrays)
+- Statistics: `mean median stddev variance range mode sum count` (operate on arrays)
 - Semicolon-separated expressions: `1 2 +; 3 4 +`
 - Script execution: `calc script.calc` (execute .calc files)
 - REPL commands: `help`, `variables`, `quit`
