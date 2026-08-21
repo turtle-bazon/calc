@@ -31,7 +31,7 @@ and GitHub Actions.
 - Constants: `PI E GOLDEN SQRT2 LN2 TRUE FALSE NIL`
 - Random: `rand randint`
 - Variables: `X = 42`
-- User functions: `defun square(x) x x *`
+- User functions: `defun square(x) x x *` define, `square(5)` call (multi-arg: comma-separated, `add(2,3)`)
 - Math functions: `square cube cubert`
 - Ternary: `condition true-val false-val ?`
 - Control flow: `if condition then true-val else false-val then`
