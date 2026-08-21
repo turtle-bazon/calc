@@ -636,14 +636,14 @@
      (values (handle-memory tok stack) nil))
     ((is-stack-op tok)
      (values (handle-stack tok stack) nil))
-        ((is-array-op tok)
+    ((is-array-op tok)
      (values (handle-array tok stack) nil))
     ((is-stats-op tok)
      (values (handle-stats tok stack) nil))
     ((is-string-op tok)
-     (values (handle-string tok stack) nil))((is-func-op tok)
+     (values (handle-string tok stack) nil))
+    ((is-func-op tok)
      (values (handle-func-op tok stack) nil))
-
     ;; String literals
     ((and (> (length tok) 1) (char= (char tok 0) #\") (char= (char tok (1- (length tok))) #\"))
      (values (cons (subseq tok 1 (1- (length tok))) stack) nil))
@@ -690,7 +690,7 @@
                          (cons (1+ else-pos) (1- then-pos))  ;; skip to ELSE, execute false branch
                          (cons (1+ then-pos) nil)))))))  ;; no ELSE, skip past THEN
     ((string-equal tok "ELSE")
-     ;; ELSE: find the enclosing IF, then find matching THEN
+     ;; ELSE: find the unmatched IF by walking backward, counting THENs
      (let ((if-pos nil)
            (depth 0))
        (loop for i from (1- pos) downto 0 do
@@ -704,10 +704,10 @@
                     (return))
                   (decf depth))))))
        (unless if-pos
-         (error (quote calc-error) :message "ELSE without matching IF"))
+         (error 'calc-error :message "ELSE without matching IF"))
        (let ((then-pos (find-matching tokens if-pos "IF" "THEN")))
          (unless then-pos
-           (error (quote calc-error) :message "ELSE without matching THEN"))
+           (error 'calc-error :message "ELSE without matching THEN"))
          (values stack (cons then-pos nil)))))
     ((string-equal tok "THEN")
      ;; THEN marks end of if block, continue after it
@@ -763,7 +763,7 @@
              (gethash "%FOR-END" vars) end-val)
        (values stack
                (cons (1+ pos) nil))))  ;; continue with body
-     ((string-equal tok "NEXT")
+    ((string-equal tok "NEXT")
      ;; NEXT: increment counter and loop back to FOR
      (let ((i-val (gethash "I" vars))
            (end-val (gethash "%FOR-END" vars)))
@@ -772,13 +772,13 @@
        (let ((for-pos (find-matching-next tokens pos)))
          (unless for-pos
            (error 'calc-error :message "NEXT without matching FOR"))
-           (incf i-val)
-           (setf (gethash "I" vars) i-val)
-           (if (and end-val (<= i-val end-val))
-               (values stack (cons (1+ for-pos) nil))  ;; loop back
-               (progn
-                 (remhash "%FOR-END" vars)
-                 (values stack nil))))))  ;; exit loop
+         (incf i-val)
+         (setf (gethash "I" vars) i-val)
+         (if (and end-val (<= i-val end-val))
+             (values stack (cons (1+ for-pos) nil))  ;; loop back
+             (progn
+               (remhash "%FOR-END" vars)
+               (values stack nil))))))  ;; exit loop
     ((string= tok "?")
      ;; Ternary operator: condition true-value false-value ?
      (when (< (length stack) 3)
@@ -786,7 +786,7 @@
      (let ((false-val (pop stack))
            (true-val (pop stack))
            (condition (pop stack)))
-       (values (cons (if (and (numberp condition) (not (= condition 0)))
+       (values (cons (if (calc-true-p condition)
                          true-val
                          false-val)
                      stack)
@@ -794,18 +794,17 @@
     ((or (string= tok "(") (string= tok ")"))
      (values stack nil))
     ((lambda-token-p tok)
-       ;; Lambda token - skip body tokens
-       (let ((params (parse-lambda-params tok))
-             (call-pos (find-call-forward tokens (1+ pos))))
-         (if call-pos
-             (let ((body-len (- call-pos pos 1 (length params))))
-               ;; Skip body tokens, the loop will process args and CALL normally
-               (values stack (cons (- call-pos (length params)) nil)))
-             (error (quote calc-error) :message "Lambda without matching CALL"))))
-((string-equal tok "CALL")
-       ;; CALL - execute lambda
-       (handle-lambda-call pos tokens stack vars funcs))
-(t
+     ;; Lambda token - skip body tokens
+     (let ((params (parse-lambda-params tok))
+           (call-pos (find-call-forward tokens (1+ pos))))
+       (if call-pos
+           ;; Skip body tokens, the loop will process args and CALL normally
+           (values stack (cons (- call-pos (length params)) nil))
+           (error 'calc-error :message "Lambda without matching CALL"))))
+    ((string-equal tok "CALL")
+     ;; CALL - execute lambda
+     (handle-lambda-call pos tokens stack vars funcs))
+    (t
      (values (cons (resolve-token tok vars) stack) nil))))
 
 (defun find-matching-begin (tokens pos)
@@ -852,10 +851,11 @@
           ;; Pop arguments from stack
           (when (< (length stack) num-args)
             (error 'calc-error :message (format nil "~A requires ~A arguments" tok num-args)))
+          ;; Pop num-args values; accumulated push order already maps
+          ;; first param to first-pushed input, no reversing needed.
           (let ((args nil))
             (loop for j from 1 to num-args do
               (push (pop stack) args))
-            (setf args (nreverse args))
             ;; Bind arguments as variables and evaluate body
             (let ((local-vars (make-hash-table :test #'equal)))
               ;; Copy existing vars

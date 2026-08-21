@@ -25,21 +25,26 @@
           ((let ((pos (search "defmacro " tr :test #'string-equal)))
              (and pos (= pos 0)))
            (let* ((parts (uiop:split-string tr :separator '(#\Space #\Tab)))
-                  (name (second parts))
+                  (raw-name (second parts))
+                  (paren-in-name (when raw-name (position #\( raw-name)))
+                  (name (if paren-in-name
+                            (subseq raw-name 0 paren-in-name)
+                            raw-name))
                   (arglist-start (position #\( tr))
-                  (arglist-end (position #\) tr :start arglist-start))
-                  (body-start (1+ arglist-end))
-                  (args-str (subseq tr (1+ arglist-start) arglist-end))
-                  (parsed-args (when (> (length args-str) 0)
-                                 (mapcar #'string-trim
-                                         (make-list (length (uiop:split-string args-str :separator '(#\, #\Space)))
-                                                    :initial-element '(#\Space #\Tab))
-                                         (uiop:split-string args-str :separator '(#\, #\Space)))))
-                  (args parsed-args)
-                  (body (subseq tr body-start)))
-             (when (and name args)
+                  (arglist-end (when arglist-start
+                                 (position #\) tr :start arglist-start)))
+                  (args-str (when arglist-end
+                              (string-trim '(#\Space #\Tab)
+                                           (subseq tr (1+ arglist-start) arglist-end))))
+                  (args (when (and args-str (> (length args-str) 0))
+          (mapcar (lambda (s) (string-trim '(#\Space #\Tab) s))
+                  (uiop:split-string args-str :separator '(#\, #\Space)))))
+                  (body (if arglist-end
+                            (subseq tr (1+ arglist-end))
+                            (format nil "~{~A~^ ~}" (cddr parts)))))
+             (when name
                (setf (gethash (string-upcase name) *macros*)
-                     (list :args args :body body))
+                     (list :args (or args nil) :body body))
                (format t "Defined macro: ~a~%" name))))
           ;; defun
           ((let ((pos (search "defun " tr :test #'string-equal)))

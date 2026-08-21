@@ -523,3 +523,32 @@
     (is (< (abs (- (calc:eval-rpn "30 SIND" vars funcs) 0.5)) 0.0001))
     (is (< (abs (- (calc:eval-rpn "60 COSD" vars funcs) 0.5)) 0.0001))
     (is (< (abs (- (calc:eval-rpn "45 TAND" vars funcs) 1)) 0.0001))))
+(test process-defmacro-forms
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (calc:process-expression "defmacro sub2(a b) a b -" vars funcs)
+    (is (not (null (gethash "SUB2" calc::*macros*))))
+    (calc:process-expression "defmacro five 3 2 +" vars funcs)
+    (is (not (null (gethash "FIVE" calc::*macros*))))
+    (calc:process-expression "defmacro double(x) x 2 *" vars funcs)
+    (is (not (null (gethash "DOUBLE" calc::*macros*))))))
+
+(test eval-macro-calls
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (calc:process-expression "defmacro sub2(a b) a b -" vars funcs)
+    (is (= (calc:eval-rpn "10 3 sub2" vars funcs) 7))
+    (calc:process-expression "defmacro avg(a b) a b + 2 /" vars funcs)
+    (is (= (calc:eval-rpn "4 10 avg" vars funcs) 7))
+    (calc:process-expression "defmacro five 3 2 +" vars funcs)
+    (is (= (calc:eval-rpn "five" vars funcs) 5))
+    (calc:process-expression "defmacro double(x) x 2 *" vars funcs)
+    (is (= (calc:eval-rpn "21 double" vars funcs) 42))))
+
+(test eval-ternary-truthiness
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "\"a\" 10 20 ?" vars funcs) 10))
+    (is (= (calc:eval-rpn "0 10 20 ?" vars funcs) 20))
+    (is (= (calc:eval-rpn "5 10 20 ?" vars funcs) 10))
+    (is (equal (calc:eval-rpn "[ 1 ] 10 20 ?" vars funcs) 10))))
