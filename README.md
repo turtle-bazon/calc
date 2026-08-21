@@ -10,7 +10,7 @@ and GitHub Actions.
 - Arithmetic: `+ - * / ^ mod min max gcd lcm pow idiv`
 - Trig / math: `sin cos tan asin acos atan atan2 log log10 exp sqrt abs round floor ceil hypot`
 - Hyperbolic trig: `sinh cosh tanh asinh acosh atanh`
-- Comparisons: `> < = >= <= !=`
+- Comparisons: `> < = >= <= !=` (work on numbers and strings)
 - Stack ops: `dup swap drop over rot nip clear depth pick tuck`
 - Bitwise / logic: `logand logior logxor logeqv and or xor nand nor not bitnot shl shr`
 - Min/Max variants: `min3 max3 clamp` (3-argument versions)
