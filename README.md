@@ -19,8 +19,11 @@ and GitHub Actions.
 - Signum: `signum`
 - Combinatorics: `npr ncr` (permutations/combinations)
 - Memory: `M+ M- MR MC` (memory register operations)
-- Arrays: `[ 1 2 3 ]` create, `get set len push pop append` operations
+- Arrays: `[ 1 2 3 ]` create, `get set len push pop append amin amax sort reverse` operations
+- Array comparison: `[ 1 2 ] [ 1 2 ] =` (deep equality; ordering by length)
+- Membership: `3 [ 1 2 3 ] IN` → true
 - Strings: `"hello"` literals, `strlen strcat substr upper lower trim` operations
+- String arithmetic: `"ab" "cd" +` concatenates, `"ab" 3 *` repeats
 - Macros: `defmacro double(x) x x +` (inline expansion)
 - Lambdas: `( x ) x x +` define anonymous functions, `5 call` invoke
 - Functional ops: `MAP FILTER REDUCE` (apply functions to arrays)

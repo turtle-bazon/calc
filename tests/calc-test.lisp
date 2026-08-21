@@ -469,3 +469,35 @@
     (is (string= (handler-case (calc:eval-rpn "1 if 10" vars funcs)
                    (calc:calc-error (e) (calc:calc-error-message e)))
                  "IF without matching THEN"))))
+(test eval-array-comparison
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (eq (calc:eval-rpn "[ 1 2 ] [ 1 2 ] =" vars funcs) t))
+    (is (null (calc:eval-rpn "[ 1 2 ] [ 1 3 ] =" vars funcs)))
+    (is (eq (calc:eval-rpn "[ 1 2 ] [ 1 3 ] !=" vars funcs) t))
+    (is (eq (calc:eval-rpn "[ 1 ] [ 1 2 ] <" vars funcs) t))
+    (is (eq (calc:eval-rpn "[ 1 2 ] [ 1 ] >" vars funcs) t))))
+
+(test eval-array-min-max-sort-reverse
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "[ 3 1 2 ] AMIN" vars funcs) 1))
+    (is (= (calc:eval-rpn "[ 3 1 2 ] AMAX" vars funcs) 3))
+    (is (equal (calc:eval-rpn "[ 3 1 2 ] SORT" vars funcs) '(1 2 3)))
+    (is (equal (calc:eval-rpn "[ 1 2 3 ] REVERSE" vars funcs) '(3 2 1)))))
+
+(test eval-string-repeat-concat
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (string= (calc:eval-rpn "\"ab\" 3 *" vars funcs) "ababab"))
+    (is (string= (calc:eval-rpn "3 \"ab\" *" vars funcs) "ababab"))
+    (is (string= (calc:eval-rpn "\"\" 5 *" vars funcs) ""))
+    (is (string= (calc:eval-rpn "\"ab\" \"cd\" +" vars funcs) "abcd"))
+    (is (= (calc:eval-rpn "6 7 *" vars funcs) 42))))
+
+(test eval-in-operator
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (eq (calc:eval-rpn "3 [ 1 2 3 ] IN" vars funcs) t))
+    (is (null (calc:eval-rpn "9 [ 1 2 3 ] IN" vars funcs)))
+    (is (eq (calc:eval-rpn "\"b\" [ \"a\" \"b\" ] IN" vars funcs) t))))
