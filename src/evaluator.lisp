@@ -273,7 +273,7 @@
       ((is-unary-func u) (make-unary-func u))
       ((is-binary-op u) (make-binary-func u))
       ((is-comparison u) (make-comparison-func u))
-      ((string= u "NOT") (lambda (x) (not x)))
+      ((string= u "NOT") (lambda (x) (not (calc-true-p x))))
       ((string= u "ABS") #'abs)
       ((string= u "NEG") #'-)
       ((string= u "ROUND") #'round)
@@ -410,7 +410,7 @@
       ((string= u "ROUND") (function round))
       ((string= u "FLOOR") (function floor))
       ((string= u "CEIL") (function ceiling))
-      ((string= u "NOT") (lambda (x) (not x)))
+      ((string= u "NOT") (lambda (x) (not (calc-true-p x))))
       ((string= u "BITNOT") (lambda (x) (lognot (truncate x))))
       ((string= u "HEX") (lambda (x) (format nil "~X" (truncate x))))
       ((string= u "BIN") (lambda (x) (format nil "~B" (truncate x))))
@@ -594,16 +594,23 @@
                          (cons (1+ then-pos) nil)))))))  ;; no ELSE, skip past THEN
     ((string-equal tok "ELSE")
      ;; ELSE: find the enclosing IF, then find matching THEN
-     (let ((if-pos nil))
-       (dotimes (i pos)
-         (when (and (string-equal (nth i tokens) "IF")
-                    (find-matching tokens i "IF" "THEN"))
-           (setf if-pos i)))
+     (let ((if-pos nil)
+           (depth 0))
+       (loop for i from (1- pos) downto 0 do
+         (let ((u (string-upcase (nth i tokens))))
+           (cond
+             ((string= u "THEN") (incf depth))
+             ((string= u "IF")
+              (if (= depth 0)
+                  (progn
+                    (setf if-pos i)
+                    (return))
+                  (decf depth))))))
        (unless if-pos
-         (error 'calc-error :message "ELSE without matching IF"))
+         (error (quote calc-error) :message "ELSE without matching IF"))
        (let ((then-pos (find-matching tokens if-pos "IF" "THEN")))
          (unless then-pos
-           (error 'calc-error :message "ELSE without matching THEN"))
+           (error (quote calc-error) :message "ELSE without matching THEN"))
          (values stack (cons then-pos nil)))))
     ((string-equal tok "THEN")
      ;; THEN marks end of if block, continue after it
@@ -852,7 +859,8 @@
   (length arr))
 
 (defun factorial-func (n)
-  (if (<= n 0) 1 (* n (factorial-func (1- n)))))
+  "Delegate to the validated factorial implementation."
+  (factorial n))
 (defun npr (n r)
   (unless (and (integerp n) (integerp r) (>= n 0) (>= r 0) (<= r n))
     (error 'calc-error :message "NPR requires 0 <= r <= n"))

@@ -422,3 +422,15 @@
         (funcs (make-hash-table :test #'equal)))
     (is (= (calc:eval-rpn "1 begin 1 until" vars funcs) 1))
     (is (= (calc:eval-rpn "0 begin 1 until" vars funcs) 0))))
+(test eval-if-else-nested
+  (let ((vars (make-hash-table :test (quote equal)))
+        (funcs (make-hash-table :test (quote equal))))
+    (is (= (calc:eval-rpn "1 if 1 if 10 else 20 then else 30 then" vars funcs) 10))
+    (is (= (calc:eval-rpn "1 if 0 if 10 else 20 then else 30 then" vars funcs) 20))
+    (is (= (calc:eval-rpn "0 if 1 if 10 else 20 then else 30 then" vars funcs) 30))))
+(test eval-not
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (null (calc:eval-rpn "1 not" vars funcs)))
+    (is (eq (calc:eval-rpn "0 not" vars funcs) t))
+    (is (equal (calc:eval-rpn "[ 0 5 0 ] \"not\" MAP" vars funcs) '(t nil t)))))
