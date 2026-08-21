@@ -445,3 +445,27 @@
     (is (eq (calc:eval-rpn "\"abc\" \"abc\" >=" vars funcs) t))
     (is (eq (calc:eval-rpn "\"abc\" \"abd\" !=" vars funcs) t))
     (is (eq (calc:eval-rpn "3 5 <" vars funcs) t))))
+(test eval-for-loop
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "0 1 5 FOR I + NEXT" vars funcs) 15))
+    (is (= (calc:eval-rpn "1 1 3 FOR I * NEXT" vars funcs) 6))))
+
+(test eval-lambda-multi-param
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "( x y ) x y * 3 4 call" vars funcs) 12))
+    (is (= (calc:eval-rpn "( x y z ) x y + z * 1 2 3 call" vars funcs) 9))))
+
+(test eval-error-messages
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (string= (handler-case (calc:eval-rpn "1 +" vars funcs)
+                   (calc:calc-error (e) (calc:calc-error-message e)))
+                 "Stack underflow: not enough arguments"))
+    (is (string= (handler-case (calc:eval-rpn "1 0 /" vars funcs)
+                   (calc:calc-error (e) (calc:calc-error-message e)))
+                 "Division by zero"))
+    (is (string= (handler-case (calc:eval-rpn "1 if 10" vars funcs)
+                   (calc:calc-error (e) (calc:calc-error-message e)))
+                 "IF without matching THEN"))))

@@ -6,6 +6,5 @@
 build/
 calc
 calc.exe
-*.dx64fsl
-*.lx64fsl
 .opencode/
+*.bak

@@ -498,18 +498,19 @@
         (setf lambda-pos i)
         (return)))
     (unless lambda-pos
-      (error (quote calc-error) :message "CALL without matching lambda"))
+      (error 'calc-error :message "CALL without matching lambda"))
     (let* ((lambda-tok (nth lambda-pos tokens))
            (params (parse-lambda-params lambda-tok))
            (num-args (length params))
            (body-tokens (subseq tokens (1+ lambda-pos) (- pos num-args))))
       (when (< (length stack) num-args)
-        (error (quote calc-error) :message (format nil "Lambda requires ~A arguments" num-args)))
+        (error 'calc-error :message (format nil "Lambda requires ~A arguments" num-args)))
+      ;; Pop num-args values; accumulated push order already maps
+      ;; first param to first-pushed input, no reversing needed.
       (let ((args nil))
         (loop for j from 1 to num-args do
           (push (pop stack) args))
-        (setf args (nreverse args))
-        (let ((local-vars (make-hash-table :test (quote equal))))
+        (let ((local-vars (make-hash-table :test 'equal)))
           (maphash (lambda (k v) (setf (gethash k local-vars) v)) vars)
           (loop for param in params
                 for arg in args do
