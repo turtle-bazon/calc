@@ -600,7 +600,7 @@
           (loop for param in params
                 for arg in args do
                   (setf (gethash (string-upcase param) local-vars) arg))
-          (let ((result (eval-rpn (format nil "~{~A~^ ~}" body-tokens) local-vars funcs)))
+          (let ((result (eval-tokens body-tokens local-vars funcs)))
             (values (cons result stack) nil)))))))
 (defun dispatch-token (tok stack vars funcs tokens pos)
   "Dispatch a single token. For control flow, may return (values new-stack new-pos)."
@@ -874,9 +874,8 @@ Scans backward so the NEAREST unmatched FOR wins (correct for nesting)."
                 (values (cons result stack) t)))))
         (values stack nil))))
 
-(defun eval-rpn (expr vars funcs)
-  (let ((tokens (tokenize expr))
-        (stack nil)
+(defun eval-tokens (tokens vars funcs)
+  (let ((stack nil)
         (pos 0))
     (loop while (< pos (length tokens)) do
       (let ((tok (nth pos tokens)))
@@ -895,6 +894,10 @@ Scans backward so the NEAREST unmatched FOR wins (correct for nesting)."
                     (setf pos (car jump))
                     (incf pos)))))))
     (if stack (car stack) nil)))
+
+(defun eval-rpn (expr vars funcs)
+  "Tokenize EXPR and evaluate; see EVAL-TOKENS for the evaluator proper."
+  (eval-tokens (tokenize expr) vars funcs))
 (defun is-stats-op (s)
   (member (string-upcase s) '("MEAN" "MEDIAN" "STDDEV" "SUM" "COUNT"
                               "VARIANCE" "RANGE" "MODE")
