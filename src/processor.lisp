@@ -85,6 +85,7 @@
                    (setf (gethash (string-upcase (car pair)) vars) (cdr pair)))
                  (let ((result (eval-rpn body vars funcs)))
                    (format t "= ~a~%" result)
+                   (dolist (pn arg-names) (remhash (string-upcase pn) vars))
                    t)))))
           (t (let ((r (eval-rpn tr vars funcs)))
                (format t "= ~a~%" r))))

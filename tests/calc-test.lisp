@@ -557,15 +557,17 @@
 (test eval-defun-call
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal)))
-    (with-output-to-string (*standard-output*)
-      (calc:process-expression "defun sq(x) x x *" vars funcs)
-      (calc:process-expression "sq(5)" vars funcs)
-      (calc:process-expression "defun add(a b) a b +" vars funcs)
-      (calc:process-expression "add(2,3)" vars funcs))
-    ;; defun binds ARGUMENTS into vars: X holds input 5, A/B hold 2/3
-    (is (= (gethash "X" vars) 5))
-    (is (= (gethash "A" vars) 2))
-    (is (= (gethash "B" vars) 3))))
+    (let ((out (with-output-to-string (*standard-output*)
+                 (calc:process-expression "defun sq(x) x x *" vars funcs)
+                 (calc:process-expression "sq(5)" vars funcs)
+                 (calc:process-expression "defun add(a b) a b +" vars funcs)
+                 (calc:process-expression "add(2,3)" vars funcs))))
+      (is (search "= 25" out))
+      (is (search "= 5" out))
+      ;; hygienic binding: arguments must NOT leak into global vars
+      (is (null (gethash "X" vars)))
+      (is (null (gethash "A" vars)))
+      (is (null (gethash "B" vars))))))
 
 (test eval-for-named-var
   (let ((vars (make-hash-table :test #'equal))
