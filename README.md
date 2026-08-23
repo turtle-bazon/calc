@@ -21,6 +21,7 @@ and GitHub Actions.
 - Combinatorics: `npr ncr` (permutations/combinations)
 - Memory: `M+ M- MR MC` (memory register operations)
 - Arrays: `[ 1 2 3 ]` create, `get set len push pop append amin amax sort reverse slice index` operations (sort/amin/amax/reverse accept numeric and string arrays; REVERSE also reverses strings)
+- Array arithmetic: `[ 1 2 ] [ 3 4 ] + - * /` elementwise (equal lengths), scalars broadcast (`[ 1 2 ] 10 *` → `(10 20)`)
 - Array comparison: `[ 1 2 ] [ 1 2 ] =` (deep equality; ordering by length)
 - Membership: `3 [ 1 2 3 ] IN` → true; `"b" "abc" IN` → substring test
 - Strings: `"hello"` literals, `strlen strcat substr upper lower trim` operations

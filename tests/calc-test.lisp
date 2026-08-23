@@ -628,3 +628,18 @@
     (is (eq (calc:eval-rpn "\"b\" \"abc\" IN" vars funcs) t))
     (is (null (calc:eval-rpn "\"z\" \"abc\" IN" vars funcs)))
     (is (eq (calc:eval-rpn "3 [ 1 2 3 ] IN" vars funcs) t))))
+(test eval-array-arithmetic
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (equal (calc:eval-rpn "[ 1 2 ] [ 3 4 ] +" vars funcs) '(4 6)))
+    (is (equal (calc:eval-rpn "[ 1 2 ] [ 3 5 ] -" vars funcs) '(-2 -3)))
+    (is (equal (calc:eval-rpn "[ 1 2 ] [ 3 4 ] *" vars funcs) '(3 8)))
+    (is (equal (calc:eval-rpn "[ 8 4 ] [ 2 2 ] /" vars funcs) '(4 2)))
+    ;; scalar broadcast, both sides
+    (is (equal (calc:eval-rpn "[ 1 2 ] 10 *" vars funcs) '(10 20)))
+    (is (equal (calc:eval-rpn "10 [ 2 4 ] /" vars funcs) '(5 5/2)))
+    ;; length mismatch is an explicit error
+    (signals calc:calc-error (calc:eval-rpn "[ 1 2 ] [ 3 ] +" vars funcs))
+    ;; strings and plain numbers keep their old paths
+    (is (string= (calc:eval-rpn "\"ab\" \"cd\" +" vars funcs) "abcd"))
+    (is (= (calc:eval-rpn "6 7 *" vars funcs) 42))))

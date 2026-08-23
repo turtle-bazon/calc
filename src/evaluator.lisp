@@ -390,8 +390,25 @@
   (cond
     ((string= tok "+")
      (lambda (a b)
-       (if (and (stringp a) (stringp b)) (concatenate 'string a b) (+ a b))))
-    ((string= tok "-") #'-)
+       (cond
+         ((and (stringp a) (stringp b)) (concatenate 'string a b))
+         ((and (listp a) (listp b))
+          (when (/= (length a) (length b))
+            (error 'calc-error :message "+ requires equal-length arrays"))
+          (mapcar #'+ a b))
+         ((and (listp a) (numberp b)) (mapcar (lambda (x) (+ x b)) a))
+         ((and (numberp a) (listp b)) (mapcar (lambda (x) (+ a x)) b))
+         (t (+ a b)))))
+    ((string= tok "-")
+     (lambda (a b)
+       (cond
+         ((and (listp a) (listp b))
+          (when (/= (length a) (length b))
+            (error 'calc-error :message "- requires equal-length arrays"))
+          (mapcar #'- a b))
+         ((and (listp a) (numberp b)) (mapcar (lambda (x) (- x b)) a))
+         ((and (numberp a) (listp b)) (mapcar (lambda (x) (- a x)) b))
+         (t (- a b)))))
     ((string= tok "*")
      (lambda (a b)
        (cond
@@ -401,12 +418,26 @@
          ((and (numberp a) (stringp b))
           (apply #'concatenate 'string
                  (make-list (max 0 (truncate a)) :initial-element b)))
+         ((and (listp a) (listp b))
+          (when (/= (length a) (length b))
+            (error 'calc-error :message "* requires equal-length arrays"))
+          (mapcar #'* a b))
+         ((and (listp a) (numberp b)) (mapcar (lambda (x) (* x b)) a))
+         ((and (numberp a) (listp b)) (mapcar (lambda (x) (* a x)) b))
          (t (* a b)))))
     ((string= tok "/")
      (lambda (a b)
-       (when (= b 0)
+       (when (or (and (numberp b) (= b 0))
+                 (and (listp b) (member 0 b :test #'=)))
          (error 'calc-error :message "Division by zero"))
-       (/ a b)))
+       (cond
+         ((and (listp a) (listp b))
+          (when (/= (length a) (length b))
+            (error 'calc-error :message "/ requires equal-length arrays"))
+          (mapcar #'/ a b))
+         ((and (listp a) (numberp b)) (mapcar (lambda (x) (/ x b)) a))
+         ((and (numberp a) (listp b)) (mapcar (lambda (x) (/ a x)) b))
+         (t (/ a b)))))
     ((string= tok "^") #'expt)
     ((string-equal tok "MOD")
      (lambda (a b)
@@ -1033,9 +1064,11 @@ Scans backward so the NEAREST unmatched FOR wins (correct for nesting)."
   (/ (factorial-func n) (* (factorial-func r) (factorial-func (- n r)))))
 
 (defun sum-array (arr)
+  "Sum of a list of numbers."
   (apply #'+ arr))
 
 (defun count-array (arr)
+  "Number of elements in a list."
   (length arr))
 
 (defun factorial-func (n)
