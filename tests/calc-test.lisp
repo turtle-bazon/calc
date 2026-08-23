@@ -622,3 +622,9 @@
     (is (= (calc:eval-rpn "[ 5 1 ] AMAX" vars funcs) 5))
     ;; mixed types are rejected
     (signals calc:calc-error (calc:eval-rpn "[ 1 \"a\" ] SORT" vars funcs))))
+(test eval-in-substring
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (eq (calc:eval-rpn "\"b\" \"abc\" IN" vars funcs) t))
+    (is (null (calc:eval-rpn "\"z\" \"abc\" IN" vars funcs)))
+    (is (eq (calc:eval-rpn "3 [ 1 2 3 ] IN" vars funcs) t))))
