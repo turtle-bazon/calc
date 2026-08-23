@@ -41,7 +41,7 @@ and GitHub Actions.
 - Statistics: `mean median stddev variance range mode sum count` (operate on arrays)
 - Semicolon-separated expressions: `1 2 +; 3 4 +`
 - Script execution: `calc script.calc` (execute .calc files)
-- REPL commands: `help`, `variables`, `quit`
+- REPL commands: `help`, `variables`, `functions`, `quit`
 - Error handling with descriptive messages
 
 ## Build

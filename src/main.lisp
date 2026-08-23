@@ -88,6 +88,7 @@ Expressions:
    "Special commands:
     help             Show this help message
     variables        List all defined variables
+    functions        List defined functions and macros
     quit             Exit the calculator
 
 "
@@ -102,6 +103,24 @@ Expressions:
           (dolist (pair (sort var-list #'string< :key #'car))
             (format stream "  ~a = ~a~%" (car pair) (cdr pair))))
         (format stream "No variables defined.~%"))))
+
+(defun print-functions (funcs &optional (stream *standard-output*))
+  (let ((fn-list nil))
+    (maphash (lambda (k v) (push (cons k (getf v :args)) fn-list)) funcs)
+    (if fn-list
+        (progn
+          (format stream "Defined functions:~%")
+          (dolist (pair (sort fn-list #'string< :key #'car))
+            (format stream "  ~a(~{~a~^, ~})~%" (car pair) (cdr pair))))
+        (format stream "No functions defined.~%")))
+  (let ((m-list nil))
+    (maphash (lambda (k v) (push (cons k (getf v :args)) m-list)) *macros*)
+    (if m-list
+        (progn
+          (format stream "Defined macros:~%")
+          (dolist (pair (sort m-list #'string< :key #'car))
+            (format stream "  ~a(~{~a~^, ~})~%" (car pair) (cdr pair))))
+        (format stream "No macros defined.~%"))))
 
 (defun run-file (filename vars funcs)
   "Execute a .calc script file."
@@ -149,6 +168,9 @@ Expressions:
               (return))
             (when (string-equal input "variables")
               (print-variables vars)
+              (return))
+            (when (string-equal input "functions")
+              (print-functions funcs)
               (return))
             (add-to-history input)
             (dolist (expr (uiop:split-string input :separator '(#\;)))
