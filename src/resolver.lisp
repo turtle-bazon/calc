@@ -8,6 +8,7 @@
       ((string= upper "GOLDEN") (/ (+ 1 (sqrt 5)) 2))
       ((string= upper "SQRT2") (sqrt 2))
       ((string= upper "LN2") (log 2))
+      ((string= upper "TAU") (* 2 pi))
       ((string= upper "T") t)
       ((string= upper "TRUE") t)
       ((string= upper "NIL") nil)

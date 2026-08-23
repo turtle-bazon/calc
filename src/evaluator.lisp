@@ -42,7 +42,7 @@
                               "GCD" "LCM" "LOGAND" "LOGIOR" "LOGXOR" "LOGEQV"
                               "AND" "OR" "XOR" "NAND" "NOR"
                               "SHL" "SHR" "HYPOT" "ATAN2" "POW"
-                              "IDIV" "NPR" "NCR" "IN")
+                              "IDIV" "NPR" "NCR" "IN" "NROOT")
           :test #'string=))
 
 (defun is-ternary-op (s)
@@ -424,7 +424,15 @@
     ((string-equal tok "NPR") #'npr)
     ((string-equal tok "NCR") #'ncr)
     ((string-equal tok "IN")
-     (lambda (a b) (if (member a b :test #'equal) t nil)))))
+     (lambda (a b) (if (member a b :test #'equal) t nil)))
+    ((string-equal tok "NROOT")
+     (lambda (a b)
+       (when (= b 0)
+         (error 'calc-error :message "NROOT requires a non-zero degree"))
+       (when (and (< a 0) (evenp b))
+         (error 'calc-error :message "NROOT of a negative with an even degree"))
+       (let ((r (expt (abs a) (/ 1 b))))
+         (if (< a 0) (- r) r))))))
 
 (defun make-comparison-func (tok)
   (labels ((str-cmp (op a b)

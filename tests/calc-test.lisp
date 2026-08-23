@@ -580,3 +580,19 @@
     (is (null (gethash "%FOR-STACK" vars)))
     (is (= (calc:eval-rpn "0 1 4 FOR K DROP K DUP * + NEXT" vars funcs) 30))
     (is (null (gethash "%FOR-STACK" vars)))))
+(test eval-tau
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (< (abs (- (calc:eval-rpn "TAU" vars funcs)
+                   (* 2 pi))) 1e-10))
+    (is (< (abs (- (calc:eval-rpn "0 TAU SIN" vars funcs) 0)) 1e-9))))
+
+(test eval-nroot
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (= (calc:eval-rpn "8 3 NROOT" vars funcs) 2))
+    (is (= (calc:eval-rpn "27 3 NROOT" vars funcs) 3))
+    (is (= (calc:eval-rpn "16 2 NROOT" vars funcs) 4))
+    (is (= (calc:eval-rpn "-8 3 NROOT" vars funcs) -2))
+    (signals calc:calc-error (calc:eval-rpn "8 0 NROOT" vars funcs))
+    (signals calc:calc-error (calc:eval-rpn "-8 2 NROOT" vars funcs))))

@@ -48,6 +48,11 @@ jobs:
         shell: bash
         run: make build
 
+      - name: Integration tests
+        if: runner.os != 'Windows'
+        shell: bash
+        run: bash tests/integration.sh
+
       - name: Test
         shell: bash
         run: |

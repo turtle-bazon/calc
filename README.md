@@ -7,7 +7,7 @@ and GitHub Actions.
 
 ## Features
 
-- Arithmetic: `+ - * / ^ mod min max gcd lcm pow idiv`
+- Arithmetic: `+ - * / ^ mod min max gcd lcm pow idiv nroot`
 - Trig / math: `sin cos tan asin acos atan atan2 log log10 exp sqrt abs round floor ceil hypot`
 - Hyperbolic trig: `sinh cosh tanh asinh acosh atanh`
 - Degree trig: `sind cosd tand` (30 sind = 0.5)
@@ -28,7 +28,7 @@ and GitHub Actions.
 - Macros: `defmacro double(x) x x +` (inline expansion)
 - Lambdas: `( x ) x x +` define anonymous functions, `5 call` invoke
 - Functional ops: `MAP FILTER REDUCE` (apply functions to arrays)
-- Constants: `PI E GOLDEN SQRT2 LN2 TRUE FALSE NIL`
+- Constants: `PI E TAU GOLDEN SQRT2 LN2 TRUE FALSE NIL`
 - Random: `rand randint`
 - Variables: `X = 42`
 - User functions: `defun square(x) x x *` define, `square(5)` call (multi-arg: comma-separated, `add(2,3)`)
