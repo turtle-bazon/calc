@@ -34,7 +34,7 @@
                               "SQUARE" "CUBE" "CUBERT"
                               "RAND" "RANDINT"
                               "SIGNUM"
-                              "SIND" "COSD" "TAND")
+                              "SIND" "COSD" "TAND" "DEG" "RAD")
           :test #'string=))
 
 (defun is-binary-op (s)
@@ -249,10 +249,10 @@
                stack)))
       ((string= u "REVERSE")
        (when (< (length stack) 1)
-         (error 'calc-error :message "REVERSE requires an array on the stack"))
+         (error 'calc-error :message "REVERSE requires an array or string on the stack"))
        (let ((arr (pop stack)))
-         (unless (listp arr)
-           (error 'calc-error :message "REVERSE requires an array"))
+         (unless (or (listp arr) (stringp arr))
+           (error 'calc-error :message "REVERSE requires an array or string"))
          (cons (reverse arr) stack)))
       ((string= u "SLICE")
        (when (< (length stack) 3)
@@ -545,6 +545,8 @@
          (let ((n (if (and (numberp x) (> x 0)) x 100)))
            (random (max 1 (truncate n))))))
       ((string= u "SIGNUM") (function signum))
+      ((string= u "DEG") (lambda (x) (* x (/ 180 pi))))
+      ((string= u "RAD") (lambda (x) (* x (/ pi 180))))
       ((string= u "SIND") (lambda (x) (sin (* x (/ pi 180)))))
       ((string= u "COSD") (lambda (x) (cos (* x (/ pi 180)))))
       ((string= u "TAND") (lambda (x) (tan (* x (/ pi 180))))))))

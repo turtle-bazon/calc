@@ -10,7 +10,7 @@ and GitHub Actions.
 - Arithmetic: `+ - * / ^ mod min max gcd lcm pow idiv nroot`
 - Trig / math: `sin cos tan asin acos atan atan2 log log10 exp sqrt abs round floor ceil hypot`
 - Hyperbolic trig: `sinh cosh tanh asinh acosh atanh`
-- Degree trig: `sind cosd tand` (30 sind = 0.5)
+- Degree trig: `sind cosd tand` (30 sind = 0.5); conversions `DEG` (radians→degrees), `RAD` (degrees→radians)
 - Comparisons: `> < = >= <= !=` (work on numbers and strings)
 - Stack ops: `dup swap drop over rot nip clear depth pick tuck`
 - Bitwise / logic: `logand logior logxor logeqv and or xor nand nor not bitnot shl shr`
@@ -20,7 +20,7 @@ and GitHub Actions.
 - Signum: `signum`
 - Combinatorics: `npr ncr` (permutations/combinations)
 - Memory: `M+ M- MR MC` (memory register operations)
-- Arrays: `[ 1 2 3 ]` create, `get set len push pop append amin amax sort reverse slice index` operations (sort/amin/amax accept numeric and string arrays)
+- Arrays: `[ 1 2 3 ]` create, `get set len push pop append amin amax sort reverse slice index` operations (sort/amin/amax/reverse accept numeric and string arrays; REVERSE also reverses strings)
 - Array comparison: `[ 1 2 ] [ 1 2 ] =` (deep equality; ordering by length)
 - Membership: `3 [ 1 2 3 ] IN` → true
 - Strings: `"hello"` literals, `strlen strcat substr upper lower trim` operations

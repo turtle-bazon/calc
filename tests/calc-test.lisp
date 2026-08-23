@@ -588,6 +588,20 @@
     (is (< (abs (- (calc:eval-rpn "0 TAU SIN" vars funcs) 0)) 1e-9))))
 
 (test eval-nroot
+(test eval-deg-rad
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (< (abs (- (calc:eval-rpn "PI DEG" vars funcs) 180)) 1e-9))
+    (is (< (abs (- (calc:eval-rpn "180 RAD" vars funcs) pi)) 1e-9))
+    (is (< (abs (- (calc:eval-rpn "30 RAD DEG" vars funcs) 30)) 1e-9))))
+
+(test eval-reverse-string
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (string= (calc:eval-rpn "\"abc\" REVERSE" vars funcs) "cba"))
+    (is (equal (calc:eval-rpn "[ 1 2 3 ] REVERSE" vars funcs) '(3 2 1)))
+    (signals calc:calc-error (calc:eval-rpn "[ 1 \"a\" ] REVERSE" vars funcs))))
+
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal)))
     (is (= (calc:eval-rpn "8 3 NROOT" vars funcs) 2))
