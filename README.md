@@ -36,7 +36,7 @@ and GitHub Actions.
 - Ternary: `condition true-val false-val ?`
 - Control flow: `if condition then true-val else false-val then`
 - Loops: `begin condition while body repeat` or `begin body condition until`
-- FOR loop: `start end FOR I body NEXT` (inline loop with counter I)
+- FOR loop: `start end FOR I body NEXT` (inline counter; name it anything — `1 4 FOR K DROP K DUP * + NEXT` sums k²). Nested loops each keep their own frame: `0 1 2 FOR J 1 2 FOR I J 10 * I + + NEXT NEXT`. Suppress the per-iteration auto-push of the counter with `DROP` when the body references the variable explicitly.
 - Statistics: `mean median stddev variance range mode sum count` (operate on arrays)
 - Semicolon-separated expressions: `1 2 +; 3 4 +`
 - Script execution: `calc script.calc` (execute .calc files)
