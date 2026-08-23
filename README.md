@@ -20,7 +20,7 @@ and GitHub Actions.
 - Signum: `signum`
 - Combinatorics: `npr ncr` (permutations/combinations)
 - Memory: `M+ M- MR MC` (memory register operations)
-- Arrays: `[ 1 2 3 ]` create, `get set len push pop append amin amax sort reverse slice index` operations
+- Arrays: `[ 1 2 3 ]` create, `get set len push pop append amin amax sort reverse slice index` operations (sort/amin/amax accept numeric and string arrays)
 - Array comparison: `[ 1 2 ] [ 1 2 ] =` (deep equality; ordering by length)
 - Membership: `3 [ 1 2 3 ] IN` → true
 - Strings: `"hello"` literals, `strlen strcat substr upper lower trim` operations

@@ -596,3 +596,15 @@
     (is (= (calc:eval-rpn "-8 3 NROOT" vars funcs) -2))
     (signals calc:calc-error (calc:eval-rpn "8 0 NROOT" vars funcs))
     (signals calc:calc-error (calc:eval-rpn "-8 2 NROOT" vars funcs))))
+(test eval-string-array-ops
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (is (equal (calc:eval-rpn "[ \"b\" \"a\" \"c\" ] SORT" vars funcs) '("a" "b" "c")))
+    (is (string= (calc:eval-rpn "[ \"pear\" \"apple\" ] AMIN" vars funcs) "apple"))
+    (is (string= (calc:eval-rpn "[ \"pear\" \"apple\" ] AMAX" vars funcs) "pear"))
+    ;; numeric paths unchanged
+    (is (equal (calc:eval-rpn "[ 3 1 2 ] SORT" vars funcs) '(1 2 3)))
+    (is (= (calc:eval-rpn "[ 5 1 ] AMIN" vars funcs) 1))
+    (is (= (calc:eval-rpn "[ 5 1 ] AMAX" vars funcs) 5))
+    ;; mixed types are rejected
+    (signals calc:calc-error (calc:eval-rpn "[ 1 \"a\" ] SORT" vars funcs))))
