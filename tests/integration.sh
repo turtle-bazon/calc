@@ -154,6 +154,21 @@ else
 fi
 
 echo ""
+echo "=== Special commands continue session ==="
+TOTAL=$((TOTAL + 1))
+result=$(printf 'help\nvariables\nfunctions\nX = 5\nX\nquit\n' | "$CALC" 2>&1)
+if echo "$result" | grep -q "Special commands:" && \
+   echo "$result" | grep -q "No variables defined." && \
+   echo "$result" | grep -q "No functions defined." && \
+   echo "$result" | grep -q "= 5"; then
+  PASS=$((PASS + 1))
+  echo "  PASS: help/variables/functions print without exiting"
+else
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: special commands (got='$result')"
+fi
+
+echo ""
 echo "=== Input handling ==="
 TOTAL=$((TOTAL + 1))
 result=$(echo "quit" | "$CALC" 2>&1)
