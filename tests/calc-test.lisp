@@ -643,3 +643,26 @@
     ;; strings and plain numbers keep their old paths
     (is (string= (calc:eval-rpn "\"ab\" \"cd\" +" vars funcs) "abcd"))
     (is (= (calc:eval-rpn "6 7 *" vars funcs) 42))))
+(test tokenize-edge-cases
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    ;; paren shapes: glued digits stay one token; spaced forms are lambda-shaped
+    (is (equal (calc:tokenize "(1)") '("(1)")))
+    (is (equal (calc:tokenize "( 1 )") '("( 1 )")))
+    (is (equal (calc:tokenize "2(3)") '("2" "(3)")))
+    ;; negatives: sign binds when no value precedes
+    (is (equal (calc:tokenize "-5") '("-5")))
+    (is (equal (calc:tokenize "- 5") '("-" "5")))
+    ;; numbers
+    (is (equal (calc:tokenize "3.14") '("3.14")))
+    (is (equal (calc:tokenize "1e3") '("1e3")))
+    (is (= (calc:eval-rpn "-5 2 +" vars funcs) -3))
+    (is (= (calc:eval-rpn "1e3 2 +" vars funcs) 1002))
+    ;; strings keep interior spaces; arrays nest as one token
+    (is (equal (calc:tokenize "\"hi there\"") '("\"hi there\"")))
+    (is (equal (calc:tokenize "[ [ 1 ] [ 2 ] ]") '("[ [ 1 ] [ 2 ] ]")))
+    ;; operators split even when glued; whitespace runs collapse; case kept
+    (is (equal (calc:tokenize "1+2") '("1" "+" "2")))
+    (is (equal (calc:tokenize "  1   2  ") '("1" "2")))
+    (is (equal (calc:tokenize "pi") '("pi")))
+    (is (null (calc:tokenize "")))))
