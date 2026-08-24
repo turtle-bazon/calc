@@ -14,6 +14,7 @@
           ;; Function call
           ((handle-call-form tr vars funcs))
           (t (let ((r (eval-rpn tr vars funcs)))
+               (setf (gethash "ANS" vars) r)
                (format t "= ~a~%" r))))
       (error (c)
         (format t "Error: ~a~%" c)))))

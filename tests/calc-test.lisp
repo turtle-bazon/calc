@@ -686,3 +686,10 @@
   (let ((vars (make-hash-table :test #'equal))
         (funcs (make-hash-table :test #'equal)))
     (signals calc:calc-error (calc:eval-rpn "2(3)" vars funcs))))
+(test ans-variable
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (calc:process-expression "2 3 +" vars funcs)
+    (calc:process-expression "ANS" vars funcs)
+    (is (= (gethash "ANS" vars) 5))
+    (is (= (calc:eval-rpn "ANS 2 *" vars funcs) 10))))
