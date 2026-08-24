@@ -527,8 +527,7 @@
            (params (parse-lambda-params lambda-tok))
            (num-args (length params))
            (body-tokens (subseq tokens (1+ lambda-pos) (- pos num-args))))
-      (when (< (length stack) num-args)
-        (error 'calc-error :message (format nil "Lambda requires ~A arguments" num-args)))
+      (check-arity stack num-args (format nil "Lambda requires ~A arguments" num-args))
       ;; Pop num-args values; accumulated push order already maps
       ;; first param to first-pushed input, no reversing needed.
       (let ((args nil))
@@ -548,8 +547,7 @@
      (values (apply-binary-op (make-binary-func tok) stack) nil))
     ((is-ternary-op tok)
      (let ((u (string-upcase tok)))
-       (when (< (length stack) 3)
-         (error 'calc-error :message (format nil "~A requires three values on the stack" tok)))
+       (check-arity stack 3 (format nil "~A requires three values on the stack" tok))
        (let ((c (pop stack))
              (b (pop stack))
              (a (pop stack)))
@@ -801,8 +799,7 @@ Scans backward so the NEAREST unmatched FOR wins (correct for nesting)."
               (body (getf macro :body))
               (num-args (length (getf macro :args))))
           ;; Pop arguments from stack
-          (when (< (length stack) num-args)
-            (error 'calc-error :message (format nil "~A requires ~A arguments" tok num-args)))
+          (check-arity stack num-args (format nil "~A requires ~A arguments" tok num-args))
           ;; Pop num-args values; accumulated push order already maps
           ;; first param to first-pushed input, no reversing needed.
           (let ((args nil))
