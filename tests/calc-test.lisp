@@ -666,3 +666,23 @@
     (is (equal (calc:tokenize "  1   2  ") '("1" "2")))
     (is (equal (calc:tokenize "pi") '("pi")))
     (is (null (calc:tokenize "")))))
+(test output-formatters
+  (let ((version-out (with-output-to-string (s) (calc::print-version s)))
+        (commands-out (with-output-to-string (s) (calc::print-commands s)))
+        (vars-empty (with-output-to-string (s)
+                      (calc::print-variables (make-hash-table :test #'equal) s)))
+        (funcs-empty (with-output-to-string (s)
+                       (calc::print-functions (make-hash-table :test #'equal) s))))
+    (is (search "calc v0.2.0" version-out))
+    (is (search "Special commands:" commands-out))
+    (is (search "help" commands-out))
+    (is (search "No variables defined." vars-empty))
+    (is (search "No functions defined." funcs-empty))
+    (is (null (search "Defined functions:" funcs-empty)))))
+
+(test implicit-mult-loud-error
+  ;; 2(3) is infix smuggling; the honest behavior is a loud eval error,
+  ;; not silent acceptance. Documented decision -- see README discussion.
+  (let ((vars (make-hash-table :test #'equal))
+        (funcs (make-hash-table :test #'equal)))
+    (signals calc:calc-error (calc:eval-rpn "2(3)" vars funcs))))
