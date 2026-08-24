@@ -89,6 +89,7 @@ Expressions:
     help             Show this help message
     variables        List all defined variables
     functions        List defined functions and macros
+    history          Show recent commands
     quit             Exit the calculator
 
 "
@@ -152,7 +153,7 @@ Expressions:
         (save-history)
         (return-from main)))
     (when interactive
-      (format t "Calculator (type 'quit' or 'help' to exit)~%")
+      (format t "Calculator (type 'quit' to exit, 'help' for commands)~%")
       (dolist (f *features-list*)
         (format t "~a~%" f)))
     (unwind-protect
@@ -163,16 +164,20 @@ Expressions:
           (let ((input (read-line *standard-input* nil nil)))
             (unless input (return))
             (when (string-equal input "quit") (return))
-            ;; Special commands print and CONTINUE (only quit exits)
-            (when (string-equal input "help")
-              (print-commands))
-            (when (string-equal input "variables")
-              (print-variables vars))
-            (when (string-equal input "functions")
-              (print-functions funcs))
-            (add-to-history input)
-            (dolist (expr (uiop:split-string input :separator '(#\;)))
-              (process-expression (string-trim '(#\Space #\Tab) expr) vars funcs))))
+            ;; Special commands print and CONTINUE (only quit exits);
+            ;; they are commands, not expressions — skip evaluation and
+            ;; stay out of the history.
+            (let ((special
+                    (cond
+                      ((string-equal input "help") (print-commands) t)
+                      ((string-equal input "variables") (print-variables vars) t)
+                      ((string-equal input "functions") (print-functions funcs) t)
+                      ((string-equal input "history") (print-history) t)
+                      (t nil))))
+              (unless special
+                (add-to-history input)
+                (dolist (expr (uiop:split-string input :separator '(#\;)))
+                  (process-expression (string-trim '(#\Space #\Tab) expr) vars funcs))))))
       ;; Save history on exit
       (save-history))))
 
@@ -189,3 +194,11 @@ Expressions:
 
 (defun calc-toplevel ()
   (clingon:run (make-calc-command)))
+(defun print-history (&optional (stream *standard-output*))
+  "Print recent REPL inputs, oldest first."
+  (if *history*
+      (let ((entries (reverse *history*)))
+        (format stream "Recent commands:~%")
+        (dolist (entry entries)
+          (format stream "  ~a~%" entry)))
+      (format stream "No history yet.~%")))
