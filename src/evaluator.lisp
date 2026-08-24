@@ -965,8 +965,9 @@ Scans backward so the NEAREST unmatched FOR wins (correct for nesting)."
          (error 'calc-error :message "NROOT of a negative with an even degree"))
        (let ((r (expt (abs a) (/ 1 b))))
          (if (< a 0) (- r) r))))
+)
   "Token -> binary operation. Lookup is string-equal (case-insensitive)."
-))
+)
 
 (defun make-binary-func (tok)
   "Return the binary operation function for token TOK, or NIL."
