@@ -9,6 +9,7 @@ build:
 	  --eval '(asdf:make "calc")'
 
 test:
+	@rm -rf ~/.cache/common-lisp/sbcl-*/tmp/calc
 	$(LISP) --non-interactive \
 	  --eval '(ql:quickload "calc-tests")' \
 	  --eval '(unless (calc-tests:run-tests) (uiop:quit 1))'
