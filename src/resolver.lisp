@@ -1,4 +1,5 @@
-(in-package #:calc)(defun resolve-token (token vars)
+(in-package #:calc)
+(defun resolve-token (token vars)
   (let ((upper (string-upcase token)))
     (cond
       ((let ((v (ignore-errors (read-from-string token))))
