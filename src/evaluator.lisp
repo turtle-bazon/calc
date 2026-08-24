@@ -35,8 +35,10 @@
        t))
 
 (defun is-ternary-op (s)
-  (member (string-upcase s) '("MIN3" "MAX3" "CLAMP")
-          :test #'string=))
+  "T when S names a ternary operation (derived from *ternary-op-table*)."
+  (and (assoc (string-upcase s) *ternary-op-table* :test (function string-equal))
+       t))
+
 
 (defun is-comparison (s)
   (member (string-upcase s) '(">" "<" "=" ">=" "<=" "!=") :test #'string=))
@@ -476,11 +478,10 @@
        (let ((c (pop stack))
              (b (pop stack))
              (a (pop stack)))
-         (values (cons (cond
-                         ((string= u "MIN3") (min a b c))
-                         ((string= u "MAX3") (max a b c))
-                         ((string= u "CLAMP") (max b (min c a)))
-                         (t (error 'calc-error :message (format nil "Unknown ternary op: ~A" tok))))
+         (values (cons        (funcall
+                        (cdr (assoc u *ternary-op-table* :test (function string-equal)))
+                        a b c)
+
                        stack)
                  nil))))
     ((is-comparison tok)
@@ -1035,3 +1036,8 @@ Scans backward so the NEAREST unmatched FOR wins (correct for nesting)."
 (defun make-unary-func (tok)
   "Return the unary operation function for token TOK, or NIL."
   (cdr (assoc (string-upcase tok) *unary-op-table* :test #'string-equal)))
+(defparameter *ternary-op-table*
+  (list
+    (cons "MIN3" (lambda (a b c) (min a b c)))
+    (cons "MAX3" (lambda (a b c) (max a b c)))
+    (cons "CLAMP" (lambda (a b c) (max b (min c a))))))
