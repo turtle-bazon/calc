@@ -627,7 +627,11 @@
   (let ((content (subseq tok 1 (1- (length tok)))))
     (with-input-from-string (s content)
       (loop for word = (read s nil nil)
-            while word collect (string-downcase (symbol-name word))))))
+            while word
+            do (unless (symbolp word)
+                 (error 'calc-error :message
+                        (format nil "Invalid lambda parameter: ~A" word)))
+            collect (string-downcase (symbol-name word))))))
 
 (defun find-call-forward (tokens start)
   "Find the next CALL token starting from position START."
