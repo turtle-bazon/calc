@@ -673,7 +673,7 @@
                       (calc::print-variables (make-hash-table :test #'equal) s)))
         (funcs-empty (with-output-to-string (s)
                        (calc::print-functions (make-hash-table :test #'equal) s))))
-    (is (search "calc v0.2.0" version-out))
+    (is (search "calc v0.3.0" version-out))
     (is (search "Special commands:" commands-out))
     (is (search "help" commands-out))
     (is (search "No variables defined." vars-empty))

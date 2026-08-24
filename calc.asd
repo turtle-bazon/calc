@@ -1,6 +1,6 @@
 (asdf:defsystem "calc"
   :description "Calculator Monster - RPN Calculator"
-  :version "0.2.0"
+  :version "0.3.0"
   :license "GPL-3.0"
   :author "Calculator Monster Contributors"
   :depends-on ("uiop" "clingon")
